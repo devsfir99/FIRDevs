@@ -21,8 +21,11 @@ const SocialScreen = () => {
             <Icon name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Sosyal</Text>
-          <TouchableOpacity style={styles.addButton}>
-            <Icon name="plus" size={24} color="#fff" />
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <Icon name="account" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -136,7 +139,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  addButton: {
+  profileButton: {
     padding: 5,
   },
   content: {
