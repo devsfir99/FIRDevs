@@ -21,14 +21,24 @@ type Props = {
 const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string>('');
+
 
   const handleLogin = () => {
+    const correctEmail = '240541016@firat.edu.tr';
+    const correctPassword = '1714Olci.';
+
     if (!email.endsWith('@firat.edu.tr')) {
-      Alert.alert('Hata', 'Lütfen Fırat Üniversitesi mail adresinizi kullanın');
+      setError('Lütfen Fırat Üniversitesi mail adresinizi kullanın');
       return;
     }
-    // TODO: Login işlemi backend ile entegre edilecek
-    navigation.replace('Main');
+
+    if (email === correctEmail && password === correctPassword) {
+      setError(''); // Hata mesajını temizle
+      navigation.replace('Main'); // Giriş başarılı, yönlendir
+    } else {
+      setError('E-posta veya şifre yanlış');
+    }
   };
 
   return (
@@ -68,11 +78,7 @@ const LoginScreen = ({ navigation }: Props) => {
             <Text style={styles.loginButtonText}>Giriş Yap</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.registerText}>Hesabın yok mu? Kayıt ol</Text>
-          </TouchableOpacity>
+          
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -80,6 +86,12 @@ const LoginScreen = ({ navigation }: Props) => {
 };
 
 const styles = StyleSheet.create({
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
