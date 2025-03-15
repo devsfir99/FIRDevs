@@ -21,9 +21,20 @@ const ProfileScreen = () => {
             <Icon name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profil</Text>
-          <TouchableOpacity style={styles.settingsButton}>
-            <Icon name="cog" size={24} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Search')}
+            >
+              <Icon name="magnify" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <Icon name="account-edit" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -59,7 +70,10 @@ const ProfileScreen = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hesap Ayarları</Text>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('EditProfile')}
+          >
             <Icon name="account-edit" size={24} color="#666" />
             <Text style={styles.menuText}>Profili Düzenle</Text>
             <Icon name="chevron-right" size={24} color="#666" />
@@ -133,8 +147,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  settingsButton: {
-    padding: 5,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    marginLeft: 15,
   },
   content: {
     flex: 1,

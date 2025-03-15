@@ -1,9 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+
+// Logo import
+import ProjectsLogo from '../../assets/projects.png';
 
 type ProjectsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Projects'>;
 
@@ -14,30 +17,54 @@ const ProjectsScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Projeler</Text>
-          <TouchableOpacity 
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Icon name="account" size={24} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Image 
+              source={ProjectsLogo} 
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Search')}
+            >
+              <Icon name="magnify" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Notifications')}
+            >
+              <Icon name="bell" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity style={styles.createPostButton}>
+        <TouchableOpacity 
+          style={styles.createPostButton}
+          onPress={() => navigation.navigate('CreateProject')}
+        >
           <Icon name="plus-circle" size={24} color="#fff" />
           <Text style={styles.createPostText}>Yeni Proje Oluştur</Text>
         </TouchableOpacity>
 
         <View style={styles.projectList}>
-          <View style={styles.projectCard}>
+          <TouchableOpacity 
+            style={styles.projectCard}
+            onPress={() => navigation.navigate('ProjectDetail', {
+              projectId: '1',
+              projectName: 'FIRDevs Mobile',
+              projectTechnology: 'React Native',
+              projectDescription: 'Fırat Üniversitesi Yazılım Topluluğu mobil uygulaması. React Native ile geliştirilen modern ve kullanıcı dostu bir arayüz.',
+              status: 'in_progress',
+              memberCount: 5
+            })}
+          >
             <View style={styles.projectHeader}>
               <View style={styles.projectInfo}>
                 <Icon name="code-braces" size={32} color="#1a73e8" />
@@ -73,9 +100,19 @@ const ProjectsScreen = () => {
                 <Text style={styles.membersText}>5 Üye</Text>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.projectCard}>
+          <TouchableOpacity 
+            style={styles.projectCard}
+            onPress={() => navigation.navigate('ProjectDetail', {
+              projectId: '2',
+              projectName: 'FIRDevs Web',
+              projectTechnology: 'React',
+              projectDescription: 'Fırat Üniversitesi Yazılım Topluluğu web sitesi. Modern ve responsive tasarım.',
+              status: 'completed',
+              memberCount: 3
+            })}
+          >
             <View style={styles.projectHeader}>
               <View style={styles.projectInfo}>
                 <Icon name="web" size={32} color="#4CAF50" />
@@ -108,9 +145,19 @@ const ProjectsScreen = () => {
                 <Text style={styles.membersText}>3 Üye</Text>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.projectCard}>
+          <TouchableOpacity 
+            style={styles.projectCard}
+            onPress={() => navigation.navigate('ProjectDetail', {
+              projectId: '3',
+              projectName: 'AI Chat Bot',
+              projectTechnology: 'Python',
+              projectDescription: 'Yapay zeka destekli sohbet botu. Öğrencilere yardımcı olmak için geliştirilen akıllı asistan.',
+              status: 'in_progress',
+              memberCount: 1
+            })}
+          >
             <View style={styles.projectHeader}>
               <View style={styles.projectInfo}>
                 <Icon name="robot" size={32} color="#FF9800" />
@@ -140,7 +187,7 @@ const ProjectsScreen = () => {
                 <Text style={styles.membersText}>1 Üye</Text>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -174,6 +221,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   backButton: {
+    padding: 5,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerLogo: {
+    width: 100,
+    height: 30,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
     padding: 5,
   },
   headerTitle: {

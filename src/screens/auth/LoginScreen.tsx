@@ -14,6 +14,9 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 
+// Logo importları
+import Logo from '../../assets/logo.png';
+
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
 };
@@ -48,7 +51,7 @@ const LoginScreen = ({ navigation }: Props) => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.logoContainer}>
           <Image
-            source={require('../../assets/logo.png')}
+            source={Logo}
             style={styles.logo}
             resizeMode="contain"
           />

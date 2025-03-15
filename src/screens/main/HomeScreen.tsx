@@ -1,9 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+
+// Logo importları
+import Logo from '../../assets/logo.png';
+import ProjectsLogo from '../../assets/projects.png';
+import SocialLogo from '../../assets/social.png';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -14,16 +19,31 @@ const HomeScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <View style={styles.logoContainer}>
-            <Icon name="code-braces" size={32} color="#fff" />
-            <Text style={styles.logoText}>FIRDevs</Text>
+          <Image 
+            source={Logo} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <View style={styles.headerRight}>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Search')}
+            >
+              <Icon name="magnify" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Notifications')}
+            >
+              <Icon name="bell" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Profile')}
+            >
+              <Icon name="account" size={24} color="#fff" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Icon name="account" size={24} color="#fff" />
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -51,26 +71,38 @@ const HomeScreen = () => {
             style={styles.card}
             onPress={() => navigation.navigate('Projects')}
           >
-            <View style={styles.cardHeader}>
-              <Icon name="folder-multiple" size={32} color="#1a73e8" />
-              <Text style={styles.cardTitle}>Projeler</Text>
+            <View style={styles.cardContent}>
+              <Image 
+                source={ProjectsLogo}
+                style={styles.cardLogo}
+                resizeMode="contain"
+              />
+              <View style={styles.cardTextContainer}>
+                <Text style={styles.cardTitle}>Projeler</Text>
+                <Text style={styles.cardDescription}>
+                  Aktif projeleri görüntüle ve yeni projeler oluştur
+                </Text>
+              </View>
             </View>
-            <Text style={styles.cardDescription}>
-              Aktif projeleri görüntüle ve yeni projeler oluştur
-            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.card}
             onPress={() => navigation.navigate('Social')}
           >
-            <View style={styles.cardHeader}>
-              <Icon name="account-group" size={32} color="#4CAF50" />
-              <Text style={styles.cardTitle}>Sosyal</Text>
+            <View style={styles.cardContent}>
+              <Image 
+                source={SocialLogo}
+                style={styles.cardLogo}
+                resizeMode="contain"
+              />
+              <View style={styles.cardTextContainer}>
+                <Text style={styles.cardTitle}>Sosyal</Text>
+                <Text style={styles.cardDescription}>
+                  Gönderileri görüntüle ve topluluktaki diğer üyelerle etkileşime geç
+                </Text>
+              </View>
             </View>
-            <Text style={styles.cardDescription}>
-              Topluluk içi etkileşim ve paylaşımlar
-            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -155,18 +187,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  logoContainer: {
+  headerLogo: {
+    width: 120,
+    height: 40,
+  },
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginLeft: 10,
-  },
-  profileButton: {
-    padding: 5,
+  headerButton: {
+    marginLeft: 15,
   },
   content: {
     flex: 1,
@@ -208,7 +238,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 15,
     padding: 20,
-    marginBottom: 15,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -218,16 +248,23 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  cardHeader: {
+  cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+  },
+  cardLogo: {
+    width: 60,
+    height: 60,
+    marginRight: 15,
+  },
+  cardTextContainer: {
+    flex: 1,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginLeft: 10,
+    marginBottom: 5,
   },
   cardDescription: {
     fontSize: 14,

@@ -1,106 +1,157 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { mockPosts } from '../../services/mockData';
+
+// Logo importları
+import Logo from '../../assets/logo.png';
+import SocialLogo from '../../assets/social.png';
 
 type SocialScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Social'>;
 
 const SocialScreen = () => {
   const navigation = useNavigation<SocialScreenNavigationProp>();
+  const [unreadNotifications, setUnreadNotifications] = useState(2); // Mock unread notifications count
+
+  const handleLike = (postId: string) => {
+    // TODO: Implement like functionality
+    console.log('Like post:', postId);
+  };
+
+  const renderPost = (post: typeof mockPosts[0]) => (
+    <TouchableOpacity 
+      key={post.id} 
+      style={styles.postContainer}
+      onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
+      activeOpacity={0.8}
+    >
+      <View style={styles.postHeader}>
+        <View style={styles.userInfo}>
+          <View style={styles.avatar}>
+            <Icon name="account" size={24} color="#fff" />
+          </View>
+          <View>
+            <Text style={styles.userName}>{post.user.name}</Text>
+            <Text style={styles.timestamp}>{post.timestamp}</Text>
+          </View>
+        </View>
+        <TouchableOpacity 
+          style={styles.moreButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            // TODO: Show post options
+          }}
+        >
+          <Icon name="dots-horizontal" size={24} color="#666" />
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.postContent}>{post.content}</Text>
+
+      <View style={styles.postActions}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            handleLike(post.id);
+          }}
+        >
+          <Icon 
+            name={post.isLiked ? "heart" : "heart-outline"} 
+            size={24} 
+            color={post.isLiked ? "#e91e63" : "#666"} 
+          />
+          <Text style={[
+            styles.actionText,
+            post.isLiked && { color: "#e91e63" }
+          ]}>{post.likes}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            navigation.navigate('PostDetail', { postId: post.id });
+          }}
+        >
+          <Icon name="comment-outline" size={24} color="#666" />
+          <Text style={styles.actionText}>{post.comments.length}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            // TODO: Implement share functionality
+          }}
+        >
+          <Icon name="share-outline" size={24} color="#666" />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Sosyal</Text>
-          <TouchableOpacity 
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Icon name="account" size={24} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Image 
+              source={SocialLogo} 
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Search')}
+            >
+              <Icon name="magnify" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Notifications')}
+            >
+              <Icon name="bell" size={24} color="#fff" />
+              {unreadNotifications > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadNotifications}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.postList}>
-          <View style={styles.postCard}>
-            <View style={styles.postHeader}>
-              <View style={styles.userInfo}>
-                <View style={styles.avatar}>
-                  <Icon name="account" size={24} color="#fff" />
-                </View>
-                <View>
-                  <Text style={styles.userName}>Ahmet Yılmaz</Text>
-                  <Text style={styles.postTime}>2 saat önce</Text>
-                </View>
-              </View>
-              <TouchableOpacity>
-                <Icon name="dots-vertical" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.postContent}>
-              Bugün FIRDevs topluluğunda harika bir workshop gerçekleştirdik! React Native ile mobil uygulama geliştirme konusunda temel bilgileri öğrendik. Katılan herkese teşekkürler! 🚀
-            </Text>
-            <View style={styles.postFooter}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Icon name="heart-outline" size={24} color="#666" />
-                <Text style={styles.actionText}>24</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Icon name="comment-outline" size={24} color="#666" />
-                <Text style={styles.actionText}>8</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Icon name="share-outline" size={24} color="#666" />
-                <Text style={styles.actionText}>Paylaş</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.postCard}>
-            <View style={styles.postHeader}>
-              <View style={styles.userInfo}>
-                <View style={[styles.avatar, { backgroundColor: '#4CAF50' }]}>
-                  <Icon name="account" size={24} color="#fff" />
-                </View>
-                <View>
-                  <Text style={styles.userName}>Ayşe Demir</Text>
-                  <Text style={styles.postTime}>5 saat önce</Text>
-                </View>
-              </View>
-              <TouchableOpacity>
-                <Icon name="dots-vertical" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.postContent}>
-              Yeni projemiz olan FIRDevs Mobile uygulaması için gönüllü geliştiriciler arıyoruz! React Native bilgisi olan arkadaşlarımızı bekliyoruz. Detaylı bilgi için DM atabilirsiniz. 💻
-            </Text>
-            <View style={styles.postFooter}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Icon name="heart-outline" size={24} color="#666" />
-                <Text style={styles.actionText}>42</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Icon name="comment-outline" size={24} color="#666" />
-                <Text style={styles.actionText}>15</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Icon name="share-outline" size={24} color="#666" />
-                <Text style={styles.actionText}>Paylaş</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        {mockPosts.map(renderPost)}
       </ScrollView>
+
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => navigation.navigate('CreatePost')}
+      >
+        <Icon name="plus" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <Image
+        source={{ uri: 'https://example.com/logo.png' }}
+        style={styles.logo}
+        resizeMode="contain"
+      />
     </SafeAreaView>
   );
 };
@@ -131,27 +182,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  backButton: {
-    padding: 5,
-  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
   },
-  profileButton: {
-    padding: 5,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    marginLeft: 15,
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#ff4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   content: {
     flex: 1,
-  },
-  postList: {
     padding: 20,
   },
-  postCard: {
+  postContainer: {
     backgroundColor: '#fff',
     borderRadius: 15,
-    padding: 20,
+    padding: 15,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: {
@@ -186,21 +253,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  postTime: {
+  timestamp: {
     fontSize: 12,
     color: '#666',
-    marginTop: 2,
+  },
+  moreButton: {
+    padding: 5,
   },
   postContent: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#333',
-    lineHeight: 20,
     marginBottom: 15,
+    lineHeight: 24,
   },
-  postFooter: {
+  postActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#eee',
     paddingTop: 15,
@@ -208,11 +276,44 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 5,
   },
   actionText: {
+    marginLeft: 5,
     fontSize: 14,
     color: '#666',
-    marginLeft: 5,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    backgroundColor: '#1a73e8',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#1a73e8',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  logo: {
+    width: 100,
+    height: 40,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerLogo: {
+    width: 100,
+    height: 30,
   },
 });
 
