@@ -1,9 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView ,Image} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { mockNotifications } from '../../services/mockData';
+import { Notification } from '../../types/post';
+
+
+import Logo from '../../assets/logo.png';
+import ProjectsLogo from '../../assets/projects.png';
+import SocialLogo from '../../assets/social.png';
+import SearchLogo from '../../assets/search.png';
+import NotificationLogo from '../../assets/notification.png';
+import ProfileLogo from '../../assets/social.png';
+
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -18,7 +29,11 @@ const ProfileScreen = () => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-left" size={24} color="#fff" />
+            <Image 
+            source={Logo} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profil</Text>
           <View style={styles.headerRight}>
@@ -26,13 +41,21 @@ const ProfileScreen = () => {
               style={styles.headerButton}
               onPress={() => navigation.navigate('Search')}
             >
-              <Icon name="magnify" size={24} color="#fff" />
+              <Image 
+            source={SearchLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
-              onPress={() => navigation.navigate('EditProfile')}
+              onPress={() => navigation.navigate('Notifications')}
             >
-              <Icon name="account-edit" size={24} color="#fff" />
+              <Image 
+            source={NotificationLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
             </TouchableOpacity>
           </View>
         </View>
@@ -151,12 +174,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+
+  headerLogo: {
+    width: 40,
+    height: 40,
+  },
+  iconStyle: {
+    width: 24,
+    height: 24,
+  },
   headerButton: {
-    marginLeft: 15,
+    marginRight :0,
+    width: 40, 
+    height: 40, 
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
   },
   content: {
     flex: 1,
   },
+ProfileScreenContainer:{
+  flexDirection: 'row',
+  backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+},
+
   profileHeader: {
     alignItems: 'center',
     padding: 20,

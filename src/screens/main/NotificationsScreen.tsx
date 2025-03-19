@@ -126,10 +126,10 @@ const NotificationsScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
-              onPress={() => navigation.navigate('Notifications')}
+              onPress={() => navigation.navigate('Profile')}
             >
               <Image 
-                source={require('../../assets/notification.png')} 
+                source={require('../../assets/social.png')} 
                 style={styles.iconStyle}
                 resizeMode="contain"
               />

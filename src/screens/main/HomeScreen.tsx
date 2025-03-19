@@ -4,11 +4,17 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { mockNotifications } from '../../services/mockData';
+import { Notification } from '../../types/post';
 
 // Logo importları
 import Logo from '../../assets/logo.png';
 import ProjectsLogo from '../../assets/projects.png';
 import SocialLogo from '../../assets/social.png';
+import SearchLogo from '../../assets/search.png';
+
+import NotificationLogo from '../../assets/notification.png';
+import ProfileLogo from '../../assets/social.png';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -29,19 +35,31 @@ const HomeScreen = () => {
               style={styles.headerButton}
               onPress={() => navigation.navigate('Search')}
             >
-              <Icon name="magnify" size={24} color="#fff" />
+              <Image 
+            source={SearchLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
               onPress={() => navigation.navigate('Notifications')}
             >
-              <Icon name="bell" size={24} color="#fff" />
+              <Image 
+            source={NotificationLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
               onPress={() => navigation.navigate('Profile')}
             >
-              <Icon name="account" size={24} color="#fff" />
+              <Image 
+            source={ProfileLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
             </TouchableOpacity>
           </View>
         </View>
@@ -166,6 +184,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10, // veya ihtiyacınıza göre bir değer
+  },
   header: {
     backgroundColor: '#1a73e8',
     paddingTop: 15,
@@ -187,16 +210,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  headerLogo: {
-    width: 120,
-    height: 40,
+  backButton: {
+    padding: 5,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  headerLogo: {
+    width: 40,
+    height: 40,
+    
+    
+  },
+  iconStyle: {
+    width: 24,
+    height: 24,
+    
+  },
   headerButton: {
-    marginLeft: 15,
+    marginRight :0,
+    width: 40, 
+    height: 40, 
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginRight:10,
+  },
+  headerButton: {
+    width: 40, 
+    height: 40, 
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
   },
   content: {
     flex: 1,
