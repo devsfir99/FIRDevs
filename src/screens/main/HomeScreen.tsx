@@ -213,10 +213,7 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 5,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  
   headerLogo: {
     width: 40,
     height: 40,
@@ -228,21 +225,8 @@ const styles = StyleSheet.create({
     height: 24,
     
   },
-  headerButton: {
-    marginRight :0,
-    width: 40, 
-    height: 40, 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
+  
+  
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
