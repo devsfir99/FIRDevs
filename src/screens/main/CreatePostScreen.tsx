@@ -10,30 +10,43 @@ import {
   Image,
   Platform,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
+import { createPost } from '../../store/slices/postsSlice';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-
-// Logo import
+import { AppDispatch } from '../../store/types';
 import NewPostLogo from '../../assets/newpost.png';
 
 type CreatePostScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CreatePost'>;
 
 const CreatePostScreen = () => {
   const navigation = useNavigation<CreatePostScreenNavigationProp>();
+  const dispatch = useDispatch<AppDispatch>();
   const [postText, setPostText] = useState('');
   const [selectedMedia, setSelectedMedia] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAddMedia = () => {
     // TODO: Implement media picker
     console.log('Add media');
   };
 
-  const handlePost = () => {
-    // TODO: Implement post creation
-    navigation.goBack();
+  const handlePost = async () => {
+    if (!postText.trim()) return;
+
+    setIsLoading(true);
+    try {
+      await dispatch(createPost({ content: postText, images: selectedMedia }));
+      navigation.goBack();
+    } catch (error) {
+      console.error('Failed to create post:', error);
+      // TODO: Show error message
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -45,15 +58,12 @@ const CreatePostScreen = () => {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Icon name="arrow-left" size={24} color="#fff" />
-            </TouchableOpacity>
-            <View style={styles.headerCenter}>
               <Image 
                 source={NewPostLogo} 
                 style={styles.headerLogo}
                 resizeMode="contain"
               />
-            </View>
+            </TouchableOpacity>
             <View style={styles.headerRight}>
               <TouchableOpacity 
                 style={[
@@ -61,59 +71,48 @@ const CreatePostScreen = () => {
                   !postText.trim() && styles.shareButtonDisabled
                 ]}
                 onPress={handlePost}
-                disabled={!postText.trim()}
+                disabled={!postText.trim() || isLoading}
               >
-                <Text style={[
-                  styles.shareButtonText,
-                  !postText.trim() && styles.shareButtonTextDisabled
-                ]}>Paylaş</Text>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={[
+                    styles.shareButtonText,
+                    !postText.trim() && styles.shareButtonTextDisabled
+                  ]}>Paylaş</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.userInfo}>
-            <View style={styles.avatar}>
-              <Icon name="account" size={24} color="#fff" />
-            </View>
-            <Text style={styles.userName}>Oğulcan Demir</Text>
-          </View>
-
+        <ScrollView style={styles.content}>
           <TextInput
-            style={styles.postInput}
+            style={styles.input}
             placeholder="Ne düşünüyorsun?"
             placeholderTextColor="#666"
             multiline
             value={postText}
             onChangeText={setPostText}
+            autoFocus
           />
-
-          {selectedMedia.length > 0 && (
-            <ScrollView 
-              horizontal 
-              style={styles.mediaPreviewContainer}
-              showsHorizontalScrollIndicator={false}
-            >
-              {selectedMedia.map((media, index) => (
-                <View key={index} style={styles.mediaPreview}>
-                  <Image source={{ uri: media }} style={styles.mediaPreviewImage} />
-                  <TouchableOpacity 
-                    style={styles.removeMediaButton}
-                    onPress={() => setSelectedMedia(selectedMedia.filter((_, i) => i !== index))}
-                  >
-                    <Icon name="close-circle" size={24} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          )}
+          
+          {selectedMedia.map((media, index) => (
+            <Image
+              key={index}
+              source={{ uri: media }}
+              style={styles.mediaPreview}
+              resizeMode="cover"
+            />
+          ))}
         </ScrollView>
 
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.mediaButton} onPress={handleAddMedia}>
-            <Icon name="image" size={24} color="#1a73e8" />
-            <Text style={styles.mediaButtonText}>Fotoğraf/Video</Text>
+          <TouchableOpacity 
+            style={styles.mediaButton}
+            onPress={handleAddMedia}
+          >
+            <Text style={styles.mediaButtonText}>Medya Ekle</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -147,14 +146,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   headerLogo: {
-    width: 100,
-    height: 30,
+    width: 40,
+    height: 40,
   },
   headerRight: {
     flexDirection: 'row',
@@ -162,83 +156,50 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     backgroundColor: '#fff',
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
   },
   shareButtonDisabled: {
-    backgroundColor: '#ccc',
+    opacity: 0.5,
   },
   shareButtonText: {
     color: '#1a73e8',
     fontWeight: 'bold',
   },
   shareButtonTextDisabled: {
-    color: '#999',
+    color: '#666',
   },
   content: {
     flex: 1,
     padding: 20,
   },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1a73e8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  postInput: {
+  input: {
     fontSize: 16,
     color: '#333',
     minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  mediaPreviewContainer: {
-    flexDirection: 'row',
-    marginTop: 20,
   },
   mediaPreview: {
-    width: 100,
-    height: 100,
-    marginRight: 10,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  mediaPreviewImage: {
     width: '100%',
-    height: '100%',
-  },
-  removeMediaButton: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
+    height: 200,
+    borderRadius: 10,
+    marginTop: 15,
   },
   footer: {
+    padding: 15,
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    padding: 15,
+    backgroundColor: '#fff',
   },
   mediaButton: {
-    flexDirection: 'row',
+    backgroundColor: '#f0f7ff',
+    padding: 15,
+    borderRadius: 10,
     alignItems: 'center',
-    padding: 10,
   },
   mediaButtonText: {
-    marginLeft: 10,
-    fontSize: 16,
     color: '#1a73e8',
+    fontWeight: 'bold',
   },
 });
 

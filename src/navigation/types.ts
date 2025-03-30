@@ -1,26 +1,20 @@
 export type RootStackParamList = {
+  // Auth Stack
   Login: undefined;
+
+  
+  // Main Stack
   Main: undefined;
-  Projects: undefined;
+  Home: undefined;
   Social: undefined;
-  Profile: undefined;
-  CreateProject: undefined;
-  ProjectDetail: {
-    projectId: string;
-    projectName: string;
-    projectTechnology: string;
-    projectDescription: string;
-    status: string;
-    memberCount: number;
-  };
-  EditProfile: undefined;
+  Projects: undefined;
   CreatePost: undefined;
-  PostDetail: {
-    postId: string;
-  };
-  Notifications: undefined;
+  CreateProject: undefined;
+  PostDetail: { postId: string };
+  ProjectDetail: { projectId: string };
+  Profile: { userId: string };
+  EditProfile: undefined;
   Search: undefined;
-  UserProfile: {
-    userId: string;
-  };
+  Notifications: undefined;
+  Settings: undefined;
 };

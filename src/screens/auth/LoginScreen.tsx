@@ -26,7 +26,6 @@ const LoginScreen = ({ navigation }: Props) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string>('');
 
-
   const handleLogin = () => {
     const correctEmail = '240541016@firat.edu.tr';
     const correctPassword = '1714Olci.';
@@ -37,8 +36,8 @@ const LoginScreen = ({ navigation }: Props) => {
     }
 
     if (email === correctEmail && password === correctPassword) {
-      setError(''); // Hata mesajını temizle
-      navigation.replace('Main'); // Giriş başarılı, yönlendir
+      setError('');
+      navigation.replace('Home');
     } else {
       setError('E-posta veya şifre yanlış');
     }
@@ -59,6 +58,8 @@ const LoginScreen = ({ navigation }: Props) => {
         </View>
 
         <View style={styles.formContainer}>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          
           <TextInput
             style={styles.input}
             placeholder="E-posta (@firat.edu.tr)"
@@ -68,6 +69,7 @@ const LoginScreen = ({ navigation }: Props) => {
             autoCapitalize="none"
             placeholderTextColor="#666"
           />
+          
           <TextInput
             style={styles.input}
             placeholder="Şifre"
@@ -80,8 +82,6 @@ const LoginScreen = ({ navigation }: Props) => {
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <Text style={styles.loginButtonText}>Giriş Yap</Text>
           </TouchableOpacity>
-
-          
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

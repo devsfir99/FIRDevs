@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,136 +10,123 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../../store/types';
+import {
+  fetchNotifications,
+  markAsRead,
+  markAllAsRead,
+} from '../../store/slices/notificationsSlice';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { mockNotifications } from '../../services/mockData';
-import { Notification } from '../../types/post';
 
-// Logo import
-import Logo from '../../assets/logo.png';
-
-type NotificationsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Notifications'>;
+type NotificationsScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Notifications'
+>;
 
 const NotificationsScreen = () => {
   const navigation = useNavigation<NotificationsScreenNavigationProp>();
-
-  const getNotificationIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'like':
-        return 'heart';
-      case 'comment':
-        return 'comment-text';
-      case 'follow':
-        return 'account-plus';
-      default:
-        return 'bell';
-    }
-  };
-
-  const getNotificationColor = (type: Notification['type']) => {
-    switch (type) {
-      case 'like':
-        return '#e91e63';
-      case 'comment':
-        return '#2196f3';
-      case 'follow':
-        return '#4caf50';
-      default:
-        return '#666';
-    }
-  };
-
-  const getNotificationText = (notification: Notification) => {
-    switch (notification.type) {
-      case 'like':
-        return 'gönderini beğendi';
-      case 'comment':
-        return 'gönderine yorum yaptı';
-      case 'follow':
-        return 'seni takip etmeye başladı';
-      default:
-        return '';
-    }
-  };
-
-  const handleNotificationPress = (notification: Notification) => {
-    if (notification.post) {
-      navigation.navigate('PostDetail', { postId: notification.post.id });
-    }
-  };
-
-  const renderNotification = (notification: Notification) => (
-    <TouchableOpacity
-      key={notification.id}
-      style={[
-        styles.notificationContainer,
-        !notification.isRead && styles.unreadNotification,
-      ]}
-      onPress={() => handleNotificationPress(notification)}
-    >
-      <View style={[
-        styles.iconContainer,
-        { backgroundColor: getNotificationColor(notification.type) }
-      ]}>
-        <Icon 
-          name={getNotificationIcon(notification.type)} 
-          size={24} 
-          color="#fff" 
-        />
-      </View>
-      <View style={styles.notificationContent}>
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{notification.user.name}</Text>
-          <Text style={styles.notificationText}>
-            {getNotificationText(notification)}
-          </Text>
-        </View>
-        <Text style={styles.timestamp}>{notification.timestamp}</Text>
-      </View>
-    </TouchableOpacity>
+  const dispatch = useDispatch<AppDispatch>();
+  const { items: notifications, loading } = useSelector(
+    (state: RootState) => state.notifications
   );
+
+  useEffect(() => {
+    dispatch(fetchNotifications());
+  }, [dispatch]);
+
+  const handleNotificationPress = (notification: any) => {
+    dispatch(markAsRead(notification.id));
+
+    if (notification.type === 'like' || notification.type === 'comment') {
+      if (notification.data?.postId) {
+        navigation.navigate('PostDetail', { postId: notification.data.postId });
+      }
+    } else if (notification.type === 'follow') {
+      if (notification.data?.userId) {
+        navigation.navigate('Profile', { userId: notification.data.userId });
+      }
+    }
+  };
+
+  const handleMarkAllAsRead = () => {
+    dispatch(markAllAsRead());
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-          >
-            <Image 
-              source={Logo} 
-              style={styles.headerLogo}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Bildirimler</Text>
-          <View style={styles.headerRight}>
-            <TouchableOpacity 
-              style={styles.headerButton}
-              onPress={() => navigation.navigate('Search')}
-            >
-              <Image 
-                source={require('../../assets/search.png')} 
-                style={styles.iconStyle}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.headerButton}
-              onPress={() => navigation.navigate('Profile')}
-            >
-              <Image 
-                source={require('../../assets/social.png')} 
-                style={styles.iconStyle}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="arrow-left" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Bildirimler</Text>
+        <TouchableOpacity
+          style={styles.markAllButton}
+          onPress={handleMarkAllAsRead}
+        >
+          <Icon name="check-all" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {mockNotifications.map(renderNotification)}
+      <ScrollView style={styles.content}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text>Yükleniyor...</Text>
+          </View>
+        ) : notifications.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="bell-off-outline" size={48} color="#666" />
+            <Text style={styles.emptyText}>Henüz bildiriminiz yok</Text>
+          </View>
+        ) : (
+          notifications.map((notification) => (
+            <TouchableOpacity
+              key={notification.id}
+              style={[
+                styles.notificationItem,
+                !notification.read && styles.unreadNotification,
+              ]}
+              onPress={() => handleNotificationPress(notification)}
+            >
+              <View style={styles.notificationContent}>
+                <Icon
+                  name={
+                    notification.type === 'like'
+                      ? 'heart'
+                      : notification.type === 'comment'
+                      ? 'comment'
+                      : 'account-plus'
+                  }
+                  size={24}
+                  color={
+                    notification.type === 'like'
+                      ? '#ff4444'
+                      : notification.type === 'comment'
+                      ? '#1a73e8'
+                      : '#4caf50'
+                  }
+                />
+                <View style={styles.notificationText}>
+                  <Text style={styles.notificationTitle}>
+                    {notification.data?.userName || 'Bir kullanıcı'}
+                    {notification.type === 'like'
+                      ? ' gönderinizi beğendi'
+                      : notification.type === 'comment'
+                      ? ' gönderinize yorum yaptı'
+                      : ' sizi takip etmeye başladı'}
+                  </Text>
+                  <Text style={styles.notificationTime}>
+                    {new Date(notification.createdAt).toLocaleDateString('tr-TR')}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -152,106 +139,68 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#1a73e8',
-    paddingTop: 15,
-    paddingBottom: 15,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 15,
     paddingHorizontal: 20,
   },
   backButton: {
     padding: 5,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
     color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerButton: {
-    marginLeft: 15,
+  markAllButton: {
+    padding: 5,
   },
   content: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
-  notificationContainer: {
-    flexDirection: 'row',
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    marginTop: 10,
+    color: '#666',
+    fontSize: 16,
+  },
+  notificationItem: {
     backgroundColor: '#fff',
-    borderRadius: 15,
     padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   unreadNotification: {
-    backgroundColor: '#e3f2fd',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
+    backgroundColor: '#f0f7ff',
   },
   notificationContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  userInfo: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginRight: 5,
   },
   notificationText: {
-    fontSize: 16,
-    color: '#666',
+    marginLeft: 15,
+    flex: 1,
   },
-  timestamp: {
+  notificationTitle: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 5,
+  },
+  notificationTime: {
     fontSize: 12,
     color: '#666',
-    marginTop: 5,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerLogo: {
-    width: 40,
-    height: 40,
-  },
-  iconStyle: {
-    width: 24,
-    height: 24,
   },
 });
 

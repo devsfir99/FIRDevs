@@ -6,192 +6,192 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
+  Image,
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../../store/types';
+import { likePost, commentOnPost, toggleLike } from '../../store/slices/postsSlice';
 import { RootStackParamList } from '../../navigation/types';
-import { mockPosts } from '../../services/mockData';
-import { Comment } from '../../types/post';
 
-// Logo import
-import SocialLogo from '../../assets/social.png';
-
-type PostDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PostDetail'>;
 type PostDetailScreenRouteProp = RouteProp<RootStackParamList, 'PostDetail'>;
+type PostDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const PostDetailScreen = () => {
   const navigation = useNavigation<PostDetailScreenNavigationProp>();
   const route = useRoute<PostDetailScreenRouteProp>();
-  const [newComment, setNewComment] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
+  const [comment, setComment] = useState('');
 
-  const post = mockPosts.find(p => p.id === route.params.postId);
+  const post = useSelector((state: RootState) =>
+    state.posts.items.find(p => p.id === route.params.postId)
+  );
+
+  const isLiked = useSelector((state: RootState) =>
+    state.posts.likedPosts.includes(route.params.postId)
+  );
 
   if (!post) {
-    return null;
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-left" size={24} color="#1a73e8" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Gönderi Detayı</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Gönderi bulunamadı</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   const handleLike = () => {
-    // TODO: Implement like functionality
-    console.log('Like post:', post.id);
-  };
-
-  const handleComment = () => {
-    if (newComment.trim()) {
-      // TODO: Implement comment functionality
-      console.log('New comment:', newComment);
-      setNewComment('');
+    dispatch(toggleLike(post.id));
+    if (!isLiked) {
+      dispatch(likePost(post.id));
     }
   };
 
-  const renderComment = (comment: Comment) => (
-    <View key={comment.id} style={styles.commentContainer}>
-      <View style={styles.commentHeader}>
-        <View style={styles.userInfo}>
-          <View style={styles.avatar}>
-            <Icon name="account" size={20} color="#fff" />
-          </View>
-          <View>
-            <Text style={styles.userName}>{comment.user.name}</Text>
-            <Text style={styles.timestamp}>{comment.timestamp}</Text>
-          </View>
-        </View>
-        <TouchableOpacity>
-          <Icon name="dots-horizontal" size={20} color="#666" />
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.commentContent}>{comment.content}</Text>
-      <View style={styles.commentActions}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Icon name="heart-outline" size={20} color="#666" />
-          <Text style={styles.actionText}>{comment.likes}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Icon name="reply" size={20} color="#666" />
-          <Text style={styles.actionText}>Yanıtla</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  const handleComment = () => {
+    if (comment.trim()) {
+      dispatch(commentOnPost({ postId: post.id, comment: comment.trim() }));
+      setComment('');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <View style={styles.header}>
-          <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-left" size={24} color="#1a73e8" />
+          </TouchableOpacity>
+          
+          <Text style={styles.headerTitle}>Gönderi Detayı</Text>
+
+          <View style={styles.headerRight}>
             <TouchableOpacity 
-              onPress={() => navigation.goBack()}
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Search')}
             >
-              <Image 
-                source={SocialLogo} 
-                style={styles.headerLogo}
-                resizeMode="contain"
-              />
+              <Icon name="magnify" size={24} color="#1a73e8" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Gönderi</Text>
-            <View style={styles.headerRight}>
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={() => navigation.navigate('Search')}
-              >
-                <Image 
-                  source={require('../../assets/search.png')} 
-                  style={styles.iconStyle}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={() => navigation.navigate('Notifications')}
-              >
-                <Image 
-                  source={require('../../assets/notification.png')} 
-                  style={styles.iconStyle}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('Notifications')}
+            >
+              <Icon name="bell" size={24} color="#1a73e8" />
+            </TouchableOpacity>
           </View>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.content}>
           <View style={styles.postContainer}>
             <View style={styles.postHeader}>
-              <View style={styles.userInfo}>
-                <View style={styles.avatar}>
-                  <Icon name="account" size={24} color="#fff" />
-                </View>
-                <View>
-                  <Text style={styles.userName}>{post.user.name}</Text>
-                  <Text style={styles.timestamp}>{post.timestamp}</Text>
-                </View>
-              </View>
-              <TouchableOpacity>
-                <Icon name="dots-horizontal" size={24} color="#666" />
+              <TouchableOpacity
+                style={styles.userInfo}
+                onPress={() =>
+                  navigation.navigate('Profile', { userId: post.userId })
+                }
+              >
+                {post.userAvatar && (
+                  <Image
+                    source={{ uri: post.userAvatar }}
+                    style={styles.avatar}
+                  />
+                )}
+                <Text style={styles.userName}>{post.userName}</Text>
               </TouchableOpacity>
+              <Text style={styles.timestamp}>
+                {new Date(post.createdAt).toLocaleDateString('tr-TR')}
+              </Text>
             </View>
 
             <Text style={styles.postContent}>{post.content}</Text>
 
+            {post.images && post.images.length > 0 && (
+              <Image
+                source={{ uri: post.images[0] }}
+                style={styles.postImage}
+                resizeMode="cover"
+              />
+            )}
+
             <View style={styles.postActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionButton}
                 onPress={handleLike}
               >
                 <Icon 
-                  name={post.isLiked ? "heart" : "heart-outline"} 
+                  name={isLiked ? "heart" : "heart-outline"} 
                   size={24} 
-                  color={post.isLiked ? "#e91e63" : "#666"} 
+                  color={isLiked ? "#ff4444" : "#666"} 
                 />
-                <Text style={[
-                  styles.actionText,
-                  post.isLiked && { color: "#e91e63" }
-                ]}>{post.likes}</Text>
+                <Text style={styles.actionText}>{post.likes}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Icon name="comment-outline" size={24} color="#666" />
-                <Text style={styles.actionText}>{post.comments.length}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Icon name="share-outline" size={24} color="#666" />
-              </TouchableOpacity>
+
+              <View style={styles.actionButton}>
+                <Icon name="comment" size={24} color="#1a73e8" />
+                <Text style={styles.actionText}>{post.comments}</Text>
+              </View>
             </View>
           </View>
 
           <View style={styles.commentsSection}>
             <Text style={styles.commentsTitle}>Yorumlar</Text>
-            {post.comments.map(renderComment)}
+            {post.commentsList?.map((comment) => (
+              <View key={comment.id} style={styles.commentItem}>
+                <View style={styles.commentHeader}>
+                  <View style={styles.commentUser}>
+                    {comment.userAvatar && (
+                      <Image
+                        source={{ uri: comment.userAvatar }}
+                        style={styles.commentAvatar}
+                      />
+                    )}
+                    <Text style={styles.commentUserName}>{comment.userName}</Text>
+                  </View>
+                  <Text style={styles.commentTime}>
+                    {new Date(comment.createdAt).toLocaleDateString('tr-TR')}
+                  </Text>
+                </View>
+                <Text style={styles.commentContent}>{comment.content}</Text>
+              </View>
+            ))}
           </View>
         </ScrollView>
 
-        <View style={styles.commentInput}>
-          <View style={styles.avatar}>
-            <Icon name="account" size={20} color="#fff" />
-          </View>
+        <View style={styles.commentInputContainer}>
           <TextInput
-            style={styles.input}
+            style={styles.commentInput}
             placeholder="Yorum yaz..."
-            value={newComment}
-            onChangeText={setNewComment}
+            value={comment}
+            onChangeText={setComment}
             multiline
           />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.sendButton,
-              { opacity: newComment.trim() ? 1 : 0.5 }
+              !comment.trim() && styles.sendButtonDisabled,
             ]}
             onPress={handleComment}
-            disabled={!newComment.trim()}
+            disabled={!comment.trim()}
           >
-            <Icon name="send" size={24} color="#1a73e8" />
+            <Icon name="send" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -202,65 +202,43 @@ const PostDetailScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fff',
   },
   header: {
-    backgroundColor: '#1a73e8',
-    paddingTop: 15,
-    paddingBottom: 15,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  headerContent: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    padding: 5,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerLogo: {
-    width: 40,
-    height: 40,
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerButton: {
-    marginLeft: 15,
+    color: '#333',
   },
   content: {
     flex: 1,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+  },
   postContainer: {
-    backgroundColor: '#fff',
     padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   postHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   userInfo: {
     flexDirection: 'row',
@@ -270,15 +248,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#1a73e8',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: 10,
   },
   userName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#1a73e8',
   },
   timestamp: {
     fontSize: 12,
@@ -287,24 +262,28 @@ const styles = StyleSheet.create({
   postContent: {
     fontSize: 16,
     color: '#333',
-    marginBottom: 15,
+    marginBottom: 10,
     lineHeight: 24,
+  },
+  postImage: {
+    width: '100%',
+    height: 300,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   postActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    paddingTop: 15,
+    paddingTop: 10,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 5,
+    marginRight: 20,
   },
   actionText: {
     marginLeft: 5,
-    fontSize: 14,
     color: '#666',
   },
   commentsSection: {
@@ -314,62 +293,77 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: 10,
   },
-  commentContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
+  commentItem: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
     padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    marginBottom: 10,
   },
   commentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 5,
+  },
+  commentUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  commentAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 8,
+  },
+  commentUserName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1a73e8',
+  },
+  commentTime: {
+    fontSize: 12,
+    color: '#666',
   },
   commentContent: {
     fontSize: 14,
     color: '#333',
-    marginBottom: 10,
     lineHeight: 20,
   },
-  commentActions: {
+  commentInputContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-  },
-  commentInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 10,
+    padding: 15,
     borderTopWidth: 1,
     borderTopColor: '#eee',
+    backgroundColor: '#fff',
   },
-  input: {
+  commentInput: {
     flex: 1,
     backgroundColor: '#f8f9fa',
     borderRadius: 20,
     paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingVertical: 10,
     marginRight: 10,
-    fontSize: 14,
     maxHeight: 100,
   },
   sendButton: {
-    padding: 5,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#1a73e8',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  iconStyle: {
-    width: 24,
-    height: 24,
+  sendButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  headerButton: {
+    padding: 8,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 
