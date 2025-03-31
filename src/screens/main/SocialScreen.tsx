@@ -17,6 +17,16 @@ import { RootState, AppDispatch, Post } from '../../store/types';
 import { fetchPosts, likePost, toggleLike } from '../../store/slices/postsSlice';
 import { RootStackParamList } from '../../navigation/types';
 import SocialLogo from '../../assets/social.png';
+import Logo from '../../assets/logo.png';
+import ProjectsLogo from '../../assets/projects.png';
+
+import SearchLogo from '../../assets/search.png';
+import EditProfileLogo from '../../assets/user-avatar.png';
+import NotificationLogo from '../../assets/notification.png';
+import ProfileLogo from '../../assets/social.png';
+import LikeLogo from '../../assets/like.png';
+import CommentLogo from '../../assets/comment.png';
+import NewPostLogo from '../../assets/newpost.png';
 
 type SocialScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -55,7 +65,11 @@ const SocialScreen = () => {
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-left" size={24} color="#fff" />
+          <Image 
+            source={Logo} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Sosyal</Text>
         <View style={styles.headerRight}>
@@ -63,13 +77,21 @@ const SocialScreen = () => {
             style={styles.headerButton}
             onPress={() => navigation.navigate('Search')}
           >
-            <Icon name="magnify" size={24} color="#fff" />
+            <Image 
+            source={SearchLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.headerButton}
             onPress={() => navigation.navigate('Notifications')}
           >
-            <Icon name="bell" size={24} color="#fff" />
+            <Image 
+            source={NotificationLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
           </TouchableOpacity>
         </View>
       </View>
@@ -114,11 +136,16 @@ const SocialScreen = () => {
                 onPress={() => handleLike(post.id)}
                 disabled={likedPosts.includes(post.id)}
               >
-                <Icon 
+                {/*<Icon 
                   name={likedPosts.includes(post.id) ? "heart" : "heart-outline"} 
                   size={24} 
                   color={likedPosts.includes(post.id) ? "#ff4444" : "#666"} 
-                />
+                />*/}
+                <Image 
+                source={LikeLogo} 
+                style={[styles.iconStyle, { tintColor: likedPosts.includes(post.id) ? "#ff4444" : "#666" }]}
+                resizeMode="contain"
+              />
                 <Text style={styles.actionText}>{post.likes}</Text>
               </TouchableOpacity>
 
@@ -126,7 +153,11 @@ const SocialScreen = () => {
                 style={styles.actionButton}
                 onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
               >
-                <Icon name="comment-outline" size={24} color="#1a73e8" />
+                <Image 
+                source={CommentLogo} 
+                style={[styles.iconStyle, { tintColor: "#1a73e8" }]}
+                resizeMode="contain"
+              />
                 <Text style={styles.actionText}>{post.comments}</Text>
               </TouchableOpacity>
             </View>
@@ -138,7 +169,11 @@ const SocialScreen = () => {
         style={styles.fab}
         onPress={() => navigation.navigate('CreatePost')}
       >
-        <Icon name="plus" size={24} color="#fff" />
+        <Image 
+        source={NewPostLogo} 
+        style={styles.iconStyle}
+        resizeMode="contain"
+      />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -148,6 +183,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  headerLogo: {
+    width: 40,
+    height: 40,
+    
+    
   },
   header: {
     flexDirection: 'row',
@@ -169,6 +210,14 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginRight:10,
+  },
+  iconStyle: {
+    width: 24,
+    height: 24,
+    
   },
   loadingContainer: {
     flex: 1,

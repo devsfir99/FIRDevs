@@ -19,7 +19,7 @@ import {
 } from '../../store/slices/notificationsSlice';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-
+import Logo from '../../assets/logo.png';
 type NotificationsScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'Notifications'
@@ -61,14 +61,18 @@ const NotificationsScreen = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-left" size={24} color="#fff" />
+          <Image 
+            source={Logo} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bildirimler</Text>
         <TouchableOpacity
           style={styles.markAllButton}
           onPress={handleMarkAllAsRead}
         >
-          <Icon name="check-all" size={24} color="#fff" />
+        
         </TouchableOpacity>
       </View>
 
@@ -137,6 +141,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
+  headerLogo: {
+    width: 40,
+    height: 40,
+  },
   header: {
     backgroundColor: '#1a73e8',
     flexDirection: 'row',
@@ -152,6 +160,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+    marginRight: 25,
   },
   markAllButton: {
     padding: 5,

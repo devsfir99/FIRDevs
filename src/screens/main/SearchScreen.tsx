@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { mockUsers, mockPosts } from '../../services/mockData';
+import BackspaceLogo from '../../assets/backspace.png';
 
 // Logo import
 import Logo from '../../assets/logo.png';
@@ -119,7 +120,11 @@ const SearchScreen = () => {
                 style={styles.clearButton}
                 onPress={() => setSearchQuery('')}
               >
-                <Icon name="close" size={20} color="#666" />
+                <Image 
+                  source={BackspaceLogo} 
+                  style={styles.iconStyle}
+                  resizeMode="contain"
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -216,6 +221,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     paddingHorizontal: 15,
+    marginHorizontal: 10,
+    marginLeft: 20,
+    paddingLeft: 10,
   },
   searchInput: {
     flex: 1,

@@ -12,7 +12,7 @@ import Logo from '../../assets/logo.png';
 import ProjectsLogo from '../../assets/projects.png';
 import SocialLogo from '../../assets/social.png';
 import SearchLogo from '../../assets/search.png';
-
+import EditProfileLogo from '../../assets/user-avatar.png';
 import NotificationLogo from '../../assets/notification.png';
 import ProfileLogo from '../../assets/social.png';
 
@@ -56,8 +56,8 @@ const HomeScreen = () => {
               onPress={() => navigation.navigate('Profile')}
             >
               <Image 
-            source={ProfileLogo} 
-            style={styles.iconStyle}
+                source={ProfileLogo} 
+                style={styles.iconStyle}
             resizeMode="contain"
           />
             </TouchableOpacity>
@@ -66,7 +66,7 @@ const HomeScreen = () => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.statsContainer}>
+        {/*<View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Icon name="folder-multiple" size={24} color="#1a73e8" />
             <Text style={styles.statNumber}>12</Text>
@@ -82,7 +82,7 @@ const HomeScreen = () => {
             <Text style={styles.statNumber}>5</Text>
             <Text style={styles.statLabel}>Etkinlikler</Text>
           </View>
-        </View>
+        </View>*/}
 
         <View style={styles.cardsContainer}>
           <TouchableOpacity 
@@ -128,7 +128,11 @@ const HomeScreen = () => {
             onPress={() => navigation.navigate('Profile')}
           >
             <View style={styles.cardHeader}>
-              <Icon name="account" size={32} color="#FF9800" />
+            <Image 
+                source={EditProfileLogo}
+                style={styles.cardLogo}
+                resizeMode="contain"
+              />
               <Text style={styles.cardTitle}>Profil</Text>
             </View>
             <Text style={styles.cardDescription}>
@@ -137,7 +141,7 @@ const HomeScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.activitySection}>
+        {/*<View style={styles.activitySection}>
           <Text style={styles.sectionTitle}>Son Aktiviteler</Text>
           <View style={styles.activityList}>
             <View style={styles.activityItem}>
@@ -173,7 +177,7 @@ const HomeScreen = () => {
               <Text style={styles.activityTime}>3 gün önce</Text>
             </View>
           </View>
-        </View>
+        </View>*/}
       </ScrollView>
     </SafeAreaView>
   );

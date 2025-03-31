@@ -19,6 +19,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { AppDispatch } from '../../store/types';
 import NewPostLogo from '../../assets/newpost.png';
+import Logo from '../../assets/logo.png';
 
 type CreatePostScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CreatePost'>;
 
@@ -59,7 +60,7 @@ const CreatePostScreen = () => {
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Image 
-                source={NewPostLogo} 
+                source={Logo} 
                 style={styles.headerLogo}
                 resizeMode="contain"
               />

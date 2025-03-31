@@ -67,29 +67,29 @@ const ProfileScreen = () => {
             <View style={styles.avatar}>
               <Icon name="account" size={40} color="#fff" />
             </View>
-            <TouchableOpacity style={styles.editAvatarButton}>
+            {/*<TouchableOpacity style={styles.editAvatarButton}>
               <Icon name="camera" size={20} color="#fff" />
-            </TouchableOpacity>
+            </TouchableOpacity>*/}
           </View>
           <Text style={styles.userName}>Oğulcan Demir</Text>
           <Text style={styles.userEmail}>240541016@firat.edu.tr</Text>
           <Text style={styles.userBio}>React Native Developer | FIRDevs Member</Text>
         </View>
 
-        <View style={styles.statsContainer}>
+        {/*<View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>12</Text>
             <Text style={styles.statLabel}>Projeler</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>256</Text>
+            <Text style={styles.statNumber}>2100</Text>
             <Text style={styles.statLabel}>Takipçi</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>48</Text>
             <Text style={styles.statLabel}>Takip</Text>
           </View>
-        </View>
+        </View>*/}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hesap Ayarları</Text>
@@ -106,7 +106,10 @@ const ProfileScreen = () => {
             <Text style={styles.menuText}>Bildirimler</Text>
             <Icon name="chevron-right" size={24} color="#666" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('Notifications')}
+          >
             <Icon name="lock-outline" size={24} color="#666" />
             <Text style={styles.menuText}>Gizlilik</Text>
             <Icon name="chevron-right" size={24} color="#666" />
