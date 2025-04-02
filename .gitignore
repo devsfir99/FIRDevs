@@ -34,4 +34,6 @@ yarn-error.log*
 /prisma/.env
 
 # vercel
-.vercel
+.vercel".env" 
+".env.txt" 
+"*.txt" 
