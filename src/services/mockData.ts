@@ -1,4 +1,29 @@
-import { User, Post, Project, Comment, Notification } from '../store/types';
+import { User, Post, Notification } from '../store/types';
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  likes: number;
+  comments: number;
+  author: {
+    name: string;
+    avatar: string;
+  };
+  date: string;
+}
+
+export interface Comment {
+  id: string;
+  author: {
+    name: string;
+    avatar: string;
+  };
+  content: string;
+  date: string;
+  likes: number;
+}
 
 export const mockUsers: User[] = [
   {
@@ -20,19 +45,23 @@ export const mockUsers: User[] = [
 export const mockComments: Comment[] = [
   {
     id: '1',
-    userId: '2',
-    userName: 'Jane Smith',
-    userAvatar: 'https://i.pravatar.cc/150?img=2',
-    content: 'Harika bir paylaşım!',
-    createdAt: '2024-03-15T10:30:00Z',
+    author: {
+      name: 'Ahmet Yılmaz',
+      avatar: 'https://picsum.photos/50/51',
+    },
+    content: 'Harika bir proje olmuş! Ben de katılmak isterim.',
+    date: '2024-03-20',
+    likes: 5,
   },
   {
     id: '2',
-    userId: '1',
-    userName: 'Oğulcan Demir',
-    userAvatar: 'https://i.pravatar.cc/150?img=1',
-    content: 'Teşekkürler, çok faydalı olmuş.',
-    createdAt: '2024-03-15T11:00:00Z',
+    author: {
+      name: 'Mehmet Demir',
+      avatar: 'https://picsum.photos/50/52',
+    },
+    content: 'Kod kalitesi çok iyi, tebrikler!',
+    date: '2024-03-19',
+    likes: 3,
   },
 ];
 
@@ -144,25 +173,28 @@ export const mockNotifications: Notification[] = [
 export const mockProjects: Project[] = [
   {
     id: '1',
-    title: 'React Native Sosyal Medya',
-    description: 'Mobil sosyal medya uygulaması geliştirme projesi',
-    technology: 'React Native, TypeScript',
-    status: 'Devam Ediyor',
-    memberCount: 3,
-    image: 'https://example.com/project1.jpg',
-    createdAt: '2024-03-15T10:00:00Z',
-    updatedAt: '2024-03-15T10:00:00Z',
-    userId: '1'
+    title: 'FIRDevs Mobil Uygulama',
+    description: 'Fırat Üniversitesi öğrencileri için geliştirilen mobil uygulama',
+    image: 'https://picsum.photos/400/200',
+    likes: 120,
+    comments: 45,
+    author: {
+      name: 'Oğulcan Demir',
+      avatar: 'https://picsum.photos/50/50',
+    },
+    date: '2024-03-20',
   },
   {
     id: '2',
-    title: 'Web Tabanlı Proje Yönetimi',
-    description: 'Ekip yönetimi ve proje takibi için web uygulaması',
-    technology: 'React, Node.js',
-    status: 'Planlanıyor',
-    memberCount: 4,
-    createdAt: '2024-03-14T15:00:00Z',
-    updatedAt: '2024-03-14T15:00:00Z',
-    userId: '2'
+    title: 'Yapay Zeka Destekli Öğrenme Platformu',
+    description: 'Öğrencilerin öğrenme süreçlerini yapay zeka ile destekleyen platform',
+    image: 'https://picsum.photos/400/201',
+    likes: 85,
+    comments: 32,
+    author: {
+      name: 'Ahmet Yılmaz',
+      avatar: 'https://picsum.photos/50/51',
+    },
+    date: '2024-03-19',
   },
 ]; 

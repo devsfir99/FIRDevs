@@ -49,7 +49,7 @@ const SearchScreen = () => {
     <TouchableOpacity
       key={user.id}
       style={styles.resultItem}
-      onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
+      onPress={() => navigation.navigate('Profile', { userId: user.id })}
     >
       <View style={styles.avatar}>
         <Icon name="account" size={24} color="#fff" />
@@ -69,7 +69,7 @@ const SearchScreen = () => {
           {post.content}
         </Text>
         <Text style={styles.postMeta}>
-          {post.user.name} • {post.timestamp}
+          {post.userName} • {post.createdAt}
         </Text>
       </View>
     </TouchableOpacity>

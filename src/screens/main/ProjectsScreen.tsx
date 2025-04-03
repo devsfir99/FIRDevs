@@ -1,195 +1,134 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import * as ImagePicker from 'expo-image-picker';
 
+import { mockProjects, Project } from '../../services/mockData';
 // Logo import
 import ProjectsLogo from '../../assets/projects.png';
+import Logo from '../../assets/logo.png';
+import SearchLogo from '../../assets/search.png';
+import NotificationLogo from '../../assets/notification.png';
 
 type ProjectsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Projects'>;
 
 const ProjectsScreen = () => {
   const navigation = useNavigation<ProjectsScreenNavigationProp>();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [likedProjects, setLikedProjects] = useState<Set<string>>(new Set());
+
+  const handleLike = (projectId: string) => {
+    setLikedProjects(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId);
+      } else {
+        newSet.add(projectId);
+      }
+      return newSet;
+    });
+  };
+
+  const renderProjectCard = ({ item }: { item: Project }) => (
+    <TouchableOpacity 
+      style={styles.projectCard}
+      onPress={() => navigation.navigate('ProjectDetail', { projectId: item.id })}
+    >
+      <View style={styles.projectHeader}>
+        <Image source={{ uri: item.author.avatar }} style={styles.authorAvatar} />
+        <View style={styles.authorInfo}>
+          <Text style={styles.authorName}>{item.author.name}</Text>
+          <Text style={styles.projectDate}>{item.date}</Text>
+        </View>
+      </View>
+      <Image source={{ uri: item.image }} style={styles.projectImage} />
+      <View style={styles.projectContent}>
+        <Text style={styles.projectTitle}>{item.title}</Text>
+        <Text style={styles.projectDescription} numberOfLines={2}>
+          {item.description}
+        </Text>
+        <View style={styles.projectStats}>
+          <TouchableOpacity 
+            style={[styles.statItem, likedProjects.has(item.id) && styles.likedItem]}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleLike(item.id);
+            }}
+          >
+            <Icon 
+              name={likedProjects.has(item.id) ? "heart" : "heart-outline"} 
+              size={20} 
+              color={likedProjects.has(item.id) ? "#ff3b30" : "#666"} 
+            />
+            <Text style={[styles.statText, likedProjects.has(item.id) && styles.likedText]}>
+              {item.likes + (likedProjects.has(item.id) ? 1 : 0)}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.statItem}
+            onPress={(e) => {
+              e.stopPropagation();
+              navigation.navigate('ProjectDetail', { projectId: item.id });
+            }}
+          >
+            <Icon name="comment-outline" size={20} color="#666" />
+            <Text style={styles.statText}>{item.comments}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-left" size={24} color="#fff" />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
             <Image 
-              source={ProjectsLogo} 
+              source={Logo} 
               style={styles.headerLogo}
               resizeMode="contain"
             />
-          </View>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Projeler</Text>
           <View style={styles.headerRight}>
             <TouchableOpacity 
               style={styles.headerButton}
               onPress={() => navigation.navigate('Search')}
             >
-              <Icon name="magnify" size={24} color="#fff" />
+              <Image 
+                source={SearchLogo} 
+                style={styles.iconStyle}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
               onPress={() => navigation.navigate('Notifications')}
             >
-              <Icon name="bell" size={24} color="#fff" />
+              <Image 
+                source={NotificationLogo} 
+                style={styles.iconStyle}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity 
-          style={styles.createPostButton}
-          onPress={() => navigation.navigate('CreateProject')}
-        >
-          <Icon name="plus-circle" size={24} color="#fff" />
-          <Text style={styles.createPostText}>Yeni Proje Oluştur</Text>
-        </TouchableOpacity>
-
-        <View style={styles.projectList}>
-          <TouchableOpacity 
-            style={styles.projectCard}
-            onPress={() => navigation.navigate('ProjectDetail', {
-              projectId: '1',
-              projectName: 'FIRDevs Mobile',
-              projectTechnology: 'React Native',
-              projectDescription: 'Fırat Üniversitesi Yazılım Topluluğu mobil uygulaması. React Native ile geliştirilen modern ve kullanıcı dostu bir arayüz.',
-              status: 'in_progress',
-              memberCount: 5
-            })}
-          >
-            <View style={styles.projectHeader}>
-              <View style={styles.projectInfo}>
-                <Icon name="code-braces" size={32} color="#1a73e8" />
-                <View style={styles.projectTitleContainer}>
-                  <Text style={styles.projectTitle}>FIRDevs Mobile</Text>
-                  <Text style={styles.projectSubtitle}>React Native</Text>
-                </View>
-              </View>
-              <TouchableOpacity>
-                <Icon name="dots-vertical" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.projectDescription}>
-              Fırat Üniversitesi Yazılım Topluluğu mobil uygulaması. React Native ile geliştirilen modern ve kullanıcı dostu bir arayüz.
-            </Text>
-            <View style={styles.projectFooter}>
-              <View style={styles.projectStatus}>
-                <Icon name="progress-clock" size={16} color="#1a73e8" />
-                <Text style={styles.statusText}>Devam Ediyor</Text>
-              </View>
-              <View style={styles.projectMembers}>
-                <View style={styles.memberAvatars}>
-                  <View style={styles.memberAvatar}>
-                    <Icon name="account" size={20} color="#fff" />
-                  </View>
-                  <View style={[styles.memberAvatar, { backgroundColor: '#4CAF50' }]}>
-                    <Icon name="account" size={20} color="#fff" />
-                  </View>
-                  <View style={[styles.memberAvatar, { backgroundColor: '#FF9800' }]}>
-                    <Icon name="account" size={20} color="#fff" />
-                  </View>
-                </View>
-                <Text style={styles.membersText}>5 Üye</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.projectCard}
-            onPress={() => navigation.navigate('ProjectDetail', {
-              projectId: '2',
-              projectName: 'FIRDevs Web',
-              projectTechnology: 'React',
-              projectDescription: 'Fırat Üniversitesi Yazılım Topluluğu web sitesi. Modern ve responsive tasarım.',
-              status: 'completed',
-              memberCount: 3
-            })}
-          >
-            <View style={styles.projectHeader}>
-              <View style={styles.projectInfo}>
-                <Icon name="web" size={32} color="#4CAF50" />
-                <View style={styles.projectTitleContainer}>
-                  <Text style={styles.projectTitle}>FIRDevs Web</Text>
-                  <Text style={styles.projectSubtitle}>React</Text>
-                </View>
-              </View>
-              <TouchableOpacity>
-                <Icon name="dots-vertical" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.projectDescription}>
-              Fırat Üniversitesi Yazılım Topluluğu web sitesi. Modern ve responsive tasarım.
-            </Text>
-            <View style={styles.projectFooter}>
-              <View style={styles.projectStatus}>
-                <Icon name="check-circle" size={16} color="#4CAF50" />
-                <Text style={[styles.statusText, { color: '#4CAF50' }]}>Tamamlandı</Text>
-              </View>
-              <View style={styles.projectMembers}>
-                <View style={styles.memberAvatars}>
-                  <View style={styles.memberAvatar}>
-                    <Icon name="account" size={20} color="#fff" />
-                  </View>
-                  <View style={[styles.memberAvatar, { backgroundColor: '#4CAF50' }]}>
-                    <Icon name="account" size={20} color="#fff" />
-                  </View>
-                </View>
-                <Text style={styles.membersText}>3 Üye</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.projectCard}
-            onPress={() => navigation.navigate('ProjectDetail', {
-              projectId: '3',
-              projectName: 'AI Chat Bot',
-              projectTechnology: 'Python',
-              projectDescription: 'Yapay zeka destekli sohbet botu. Öğrencilere yardımcı olmak için geliştirilen akıllı asistan.',
-              status: 'in_progress',
-              memberCount: 1
-            })}
-          >
-            <View style={styles.projectHeader}>
-              <View style={styles.projectInfo}>
-                <Icon name="robot" size={32} color="#FF9800" />
-                <View style={styles.projectTitleContainer}>
-                  <Text style={styles.projectTitle}>AI Chat Bot</Text>
-                  <Text style={styles.projectSubtitle}>Python</Text>
-                </View>
-              </View>
-              <TouchableOpacity>
-                <Icon name="dots-vertical" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.projectDescription}>
-              Yapay zeka destekli sohbet botu. Öğrencilere yardımcı olmak için geliştirilen akıllı asistan.
-            </Text>
-            <View style={styles.projectFooter}>
-              <View style={styles.projectStatus}>
-                <Icon name="progress-clock" size={16} color="#1a73e8" />
-                <Text style={styles.statusText}>Geliştirme Aşamasında</Text>
-              </View>
-              <View style={styles.projectMembers}>
-                <View style={styles.memberAvatars}>
-                  <View style={styles.memberAvatar}>
-                    <Icon name="account" size={20} color="#fff" />
-                  </View>
-                </View>
-                <Text style={styles.membersText}>1 Üye</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+      <FlatList
+        data={mockProjects}
+        renderItem={renderProjectCard}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 };
@@ -223,64 +162,37 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 5,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerLogo: {
-    width: 100,
-    height: 30,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerButton: {
-    padding: 5,
-  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
   },
-  profileButton: {
-    padding: 5,
-  },
-  content: {
-    flex: 1,
-  },
-  createPostButton: {
-    backgroundColor: '#1a73e8',
-    margin: 20,
-    padding: 15,
-    borderRadius: 15,
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  headerLogo: {
+    width: 40,
+    height: 40,
+  },
+  iconStyle: {
+    width: 24,
+    height: 24,
+  },
+  headerButton: {
+    marginLeft: 15,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
-    shadowColor: '#1a73e8',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    alignItems: 'center',
   },
-  createPostText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  projectList: {
-    padding: 20,
+  content: {
+    padding: 15,
   },
   projectCard: {
     backgroundColor: '#fff',
     borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -289,70 +201,72 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+    overflow: 'hidden',
+  },
+  projectImage: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'cover',
+  },
+  projectContent: {
+    padding: 15,
   },
   projectHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    padding: 10,
   },
-  projectInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  authorAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
   },
-  projectTitleContainer: {
-    marginLeft: 15,
+  authorInfo: {
+    flex: 1,
+  },
+  authorName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  projectDate: {
+    fontSize: 12,
+    color: '#666',
   },
   projectTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-  },
-  projectSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
+    marginBottom: 8,
   },
   projectDescription: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 15,
-    lineHeight: 20,
+    marginBottom: 10,
   },
-  projectFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  projectStatus: {
+  projectStats: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  statusText: {
-    fontSize: 14,
-    color: '#1a73e8',
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 20,
+  },
+  statText: {
     marginLeft: 5,
-  },
-  projectMembers: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberAvatars: {
-    flexDirection: 'row',
-    marginRight: 10,
-  },
-  memberAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#1a73e8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: -8,
-  },
-  membersText: {
     fontSize: 14,
     color: '#666',
+  },
+  likedItem: {
+    backgroundColor: '#fff1f0',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+  },
+  likedText: {
+    color: '#ff3b30',
   },
 });
 

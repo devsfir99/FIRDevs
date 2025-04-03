@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView ,Image} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView ,Image, FlatList} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,12 +14,73 @@ import SocialLogo from '../../assets/social.png';
 import SearchLogo from '../../assets/search.png';
 import NotificationLogo from '../../assets/notification.png';
 import ProfileLogo from '../../assets/social.png';
+import UserAvatarLogo from '../../assets/user-avatar.png';
+import LogoutLogo from '../../assets/logout.png'
 
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
+interface SharedPost {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  likes: number;
+  comments: number;
+  date: string;
+}
+
 const ProfileScreen = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const [isSharedPostsExpanded, setIsSharedPostsExpanded] = useState(false);
+
+  // Örnek paylaşılan gönderiler
+  const sharedPosts: SharedPost[] = [
+    {
+      id: '1',
+      title: 'FIRDevs Mobil Uygulama',
+      description: 'Fırat Üniversitesi öğrencileri için geliştirilen mobil uygulama',
+      image: 'https://picsum.photos/400/200',
+      likes: 120,
+      comments: 45,
+      date: '2024-03-20',
+    },
+    {
+      id: '2',
+      title: 'Yapay Zeka Destekli Öğrenme Platformu',
+      description: 'Öğrencilerin öğrenme süreçlerini yapay zeka ile destekleyen platform',
+      image: 'https://picsum.photos/400/201',
+      likes: 85,
+      comments: 32,
+      date: '2024-03-19',
+    },
+  ];
+
+  const renderSharedPost = ({ item }: { item: SharedPost }) => (
+    <TouchableOpacity 
+      style={styles.sharedPostCard}
+      onPress={() => navigation.navigate('ProjectDetail', { projectId: item.id })}
+    >
+      <Image source={{ uri: item.image }} style={styles.sharedPostImage} />
+      <View style={styles.sharedPostContent}>
+        <Text style={styles.sharedPostTitle}>{item.title}</Text>
+        <Text style={styles.sharedPostDescription} numberOfLines={2}>
+          {item.description}
+        </Text>
+        <View style={styles.sharedPostStats}>
+          <View style={styles.statItem}>
+            <Icon name="heart-outline" size={20} color="#666" />
+            <Text style={styles.statText}>{item.likes}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Icon name="comment-outline" size={20} color="#666" />
+            <Text style={styles.statText}>{item.comments}</Text>
+          </View>
+          <Text style={styles.sharedPostDate}>{item.date}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -92,27 +153,61 @@ const ProfileScreen = () => {
         </View>*/}
 
         <View style={styles.section}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => setIsSharedPostsExpanded(!isSharedPostsExpanded)}
+          >
+            <Text style={styles.sectionTitle}>Paylaşılan Gönderiler</Text>
+            <Icon 
+              name={isSharedPostsExpanded ? "chevron-up" : "chevron-down"} 
+              size={24} 
+              color="#666" 
+            />
+          </TouchableOpacity>
+          
+          {isSharedPostsExpanded && (
+            <FlatList
+              data={sharedPosts}
+              renderItem={renderSharedPost}
+              keyExtractor={item => item.id}
+              scrollEnabled={false}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hesap Ayarları</Text>
           <TouchableOpacity 
             style={styles.menuItem}
             onPress={() => navigation.navigate('EditProfile')}
           >
-            <Icon name="account-edit" size={24} color="#666" />
+            <Image
+              source={UserAvatarLogo}
+              style={styles.iconStyle}
+              resizeMode="contain"
+            />
             <Text style={styles.menuText}>Profili Düzenle</Text>
-            <Icon name="chevron-right" size={24} color="#666" />
+            
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <Icon name="bell-outline" size={24} color="#666" />
+          <TouchableOpacity style={styles.menuItem}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Image
+              source={NotificationLogo}
+              style={styles.iconStyle}
+              resizeMode="contain"
+            />
             <Text style={styles.menuText}>Bildirimler</Text>
-            <Icon name="chevron-right" size={24} color="#666" />
+            
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.menuItem}
-            onPress={() => navigation.navigate('Notifications')}
+            
           >
             <Icon name="lock-outline" size={24} color="#666" />
             <Text style={styles.menuText}>Gizlilik</Text>
-            <Icon name="chevron-right" size={24} color="#666" />
+            
           </TouchableOpacity>
         </View>
 
@@ -129,11 +224,19 @@ const ProfileScreen = () => {
             <Icon name="chevron-right" size={24} color="#666" />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.logoutButton}>
-          <Icon name="logout" size={24} color="#ff3b30" />
-          <Text style={styles.logoutText}>Çıkış Yap</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.logoutButton}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Image
+              source={LogoutLogo}
+              style={styles.iconStyle}
+              resizeMode="contain"
+            />
+            <Text style={styles.logoutText}>Çıkış Yap</Text>
+            
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -349,6 +452,59 @@ ProfileScreenContainer:{
     fontSize: 16,
     color: '#ff3b30',
     marginLeft: 10,
+  },
+  sharedPostCard: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    marginBottom: 15,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  sharedPostImage: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'cover',
+  },
+  sharedPostContent: {
+    padding: 15,
+  },
+  sharedPostTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  sharedPostDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 10,
+  },
+  sharedPostStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sharedPostDate: {
+    fontSize: 12,
+    color: '#666',
+  },
+  statText: {
+    fontSize: 16,
+    color: '#666',
+    marginLeft: 5,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
   },
 });
 

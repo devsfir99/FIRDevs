@@ -1,0 +1,10 @@
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, id:B98C2806-B434-4C24-9069-49D81E15C511, OS:18.3.1, name:iPhone SE (3rd generation) }
+{ platform:iOS Simulator, id:B98C2806-B434-4C24-9069-49D81E15C511, OS:18.3.1, name:iPhone SE (3rd generation) }
+** BUILD FAILED **
+
+
+The following build commands failed:
+	PhaseScriptExecution [CP-User]\ Generate\ Specs /Users/ogulcandemir/Library/Developer/Xcode/DerivedData/firdevsmobil-gsvlrrooyelyrgdadzovtsouwtqf/Build/Intermediates.noindex/Pods.build/Debug-iphonesimulator/React-rncore.build/Script-46EB2E00012060.sh (in target 'React-rncore' from project 'Pods')
+	Building workspace firdevsmobil with scheme firdevsmobil and configuration Debug
+(2 failures)
