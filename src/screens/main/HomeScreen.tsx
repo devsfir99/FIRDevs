@@ -16,7 +16,7 @@ import EditProfileLogo from '../../assets/user-avatar.png';
 import NotificationLogo from '../../assets/notification.png';
 import ProfileLogo from '../../assets/social.png';
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -33,7 +33,7 @@ const HomeScreen = () => {
           <View style={styles.headerRight}>
             <TouchableOpacity 
               style={styles.headerButton}
-              onPress={() => navigation.navigate('Search')}
+              onPress={() => navigation.navigate({ name: 'Search', params: undefined })}
             >
               <Image 
             source={SearchLogo} 
@@ -43,7 +43,7 @@ const HomeScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
-              onPress={() => navigation.navigate('Notifications')}
+              onPress={() => navigation.navigate({ name: 'Notifications', params: undefined })}
             >
               <Image 
             source={NotificationLogo} 
@@ -53,7 +53,7 @@ const HomeScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
-              onPress={() => navigation.navigate('Profile')}
+              onPress={() => navigation.navigate({ name: 'Profile', params: { userId: 'current' } })}
             >
               <Image 
                 source={ProfileLogo} 
@@ -87,7 +87,7 @@ const HomeScreen = () => {
         <View style={styles.cardsContainer}>
           <TouchableOpacity 
             style={styles.card}
-            onPress={() => navigation.navigate('Projects')}
+            onPress={() => navigation.navigate({ name: 'Projects', params: undefined })}
           >
             <View style={styles.cardContent}>
               <Image 
@@ -106,7 +106,7 @@ const HomeScreen = () => {
 
           <TouchableOpacity 
             style={styles.card}
-            onPress={() => navigation.navigate('Social')}
+            onPress={() => navigation.navigate({ name: 'Social', params: undefined })}
           >
             <View style={styles.cardContent}>
               <Image 
@@ -125,7 +125,7 @@ const HomeScreen = () => {
 
           <TouchableOpacity 
             style={styles.card}
-            onPress={() => navigation.navigate('Profile')}
+            onPress={() => navigation.navigate({ name: 'Profile', params: { userId: 'current' } })}
           >
             <View style={styles.cardHeader}>
             <Image 
