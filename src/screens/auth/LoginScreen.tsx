@@ -10,9 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 // Logo importları
 import Logo from '../../assets/logo.png';
@@ -21,25 +24,68 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
 };
 
+// API URL - Geliştirme ve farklı ortamlar için değiştirilebilir
+// iOS Simulator için: 'http://localhost:3001/api'
+// Android Emulator için: 'http://10.0.2.2:3001/api'
+// Gerçek cihaz için bilgisayarın IP adresi: 'http://192.168.1.X:3001/api'
+const API_URL = Platform.OS === 'ios' 
+  ? 'http://localhost:3001/api' 
+  : 'http://10.0.2.2:3001/api';
+
 const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [sifre, setSifre] = useState('');
   const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    const correctEmail = '240541016@firat.edu.tr';
-    const correctPassword = '1714Olci.';
+  const handleLogin = async () => {
+    // Form validasyonu
+    if (!email || !sifre) {
+      setError('Lütfen tüm alanları doldurunuz');
+      return;
+    }
 
     if (!email.endsWith('@firat.edu.tr')) {
       setError('Lütfen Fırat Üniversitesi mail adresinizi kullanın');
       return;
     }
 
-    if (email === correctEmail && password === correctPassword) {
+    // API kullanımı
+    try {
+      setLoading(true);
       setError('');
+      
+      console.log('Giriş bilgileri:', { email, sifre });
+      console.log('API URL:', API_URL);
+      
+      // API isteği
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email,
+        sifre
+      });
+      
+      console.log('Login response:', response.data);
+      
+      // Token'ı kaydet
+      await AsyncStorage.setItem('token', response.data.token);
+      
+      // Ana sayfaya yönlendir
       navigation.replace('Home');
-    } else {
-      setError('E-posta veya şifre yanlış');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      if (error.response) {
+        // Sunucudan hata yanıtı alındı
+        setError(error.response.data?.message || 'Giriş başarısız');
+      } else if (error.request) {
+        // Sunucuya istek yapıldı ama yanıt alınamadı
+        setError('Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');
+      } else {
+        // İstek yapılırken bir şeyler ters gitti
+        setError('Bir hata oluştu. Lütfen tekrar deneyin.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,14 +119,29 @@ const LoginScreen = ({ navigation }: Props) => {
           <TextInput
             style={styles.input}
             placeholder="Şifre"
-            value={password}
-            onChangeText={setPassword}
+            value={sifre}
+            onChangeText={setSifre}
             secureTextEntry
             placeholderTextColor="#666"
           />
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Giriş Yap</Text>
+          <TouchableOpacity 
+            style={styles.loginButton} 
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.loginButtonText}>Giriş Yap</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.registerButton} 
+            onPress={() => navigation.navigate('Register')}
+          >
+            <Text style={styles.registerText}>Hesabınız yok mu? Kayıt Olun</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

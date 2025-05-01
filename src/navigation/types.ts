@@ -1,6 +1,7 @@
 export type RootStackParamList = {
   // Auth Stack
   Login: undefined;
+  Register: undefined;
 
   // Main Stack
   Home: undefined;

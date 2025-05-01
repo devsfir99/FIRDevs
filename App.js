@@ -8,6 +8,7 @@ import { Provider } from 'react-redux';
 import store from './src/store';
 
 import LoginScreen from './src/screens/auth/LoginScreen';
+import RegisterScreen from './src/screens/auth/RegisterScreen';
 import HomeScreen from './src/screens/main/HomeScreen';
 import ProjectsScreen from './src/screens/main/ProjectsScreen';
 import SocialScreen from './src/screens/main/SocialScreen';
@@ -39,6 +40,7 @@ const App = () => {
             }}
           >
             <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Projects" component={ProjectsScreen} />
             <Stack.Screen name="Social" component={SocialScreen} />
@@ -57,4 +59,4 @@ const App = () => {
   );
 };
 
-export default App; 
+export default App;

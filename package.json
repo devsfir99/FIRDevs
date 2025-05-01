@@ -35,8 +35,9 @@
     "use-sync-external-store": "1.5.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.23.9",
-    "@babel/preset-env": "^7.23.9",
+    "@babel/core": "^7.27.1",
+    "@babel/preset-env": "^7.27.1",
+    "@babel/preset-react": "^7.27.1",
     "@babel/runtime": "^7.23.9",
     "@react-native-community/cli": "12.3.0",
     "@react-native/babel-preset": "0.73.21",
