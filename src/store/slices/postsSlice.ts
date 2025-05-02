@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { PostsState, Post, Comment } from '../types';
 import { mockPosts, mockUsers } from '../../services/mockData';
-import { addNotification } from './notificationsSlice';
+import { addNotification } from './notificationSlice';
 import { AppDispatch, RootState } from '../types';
 
 const initialState: PostsState = {

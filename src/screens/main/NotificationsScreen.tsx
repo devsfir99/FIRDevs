@@ -16,7 +16,7 @@ import {
   fetchNotifications,
   markAsRead,
   markAllAsRead,
-} from '../../store/slices/notificationsSlice';
+} from '../../store/slices/notificationSlice';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import Logo from '../../assets/logo.png';

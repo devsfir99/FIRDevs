@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import axios from 'axios';
+import authService from '../../services/authService';
 
 // Logo importları
 import Logo from '../../assets/logo.png';
@@ -21,15 +21,6 @@ import Logo from '../../assets/logo.png';
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Register'>;
 };
-
-// API URL - Geliştirme ve farklı ortamlar için değiştirilebilir
-// KULLANDIĞINIZ CİHAZA GÖRE AŞAĞIDAKİ URL'Yİ DEĞİŞTİRİN
-// iOS Simulator için: 'http://localhost:3001/api'
-// Android Emulator için: 'http://10.0.2.2:3001/api'
-// Gerçek cihaz için bilgisayarın IP adresi: örn. 'http://192.168.1.5:3001/api'
-const API_URL = Platform.OS === 'ios' 
-  ? 'http://localhost:3001/api' 
-  : 'http://10.0.2.2:3001/api';
 
 const RegisterScreen = ({ navigation }: Props) => {
   const [ad, setAd] = useState('');
@@ -39,7 +30,6 @@ const RegisterScreen = ({ navigation }: Props) => {
   const [sifreTekrar, setSifreTekrar] = useState('');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleRegister = async () => {
     // Form validasyonu
@@ -63,31 +53,26 @@ const RegisterScreen = ({ navigation }: Props) => {
       return;
     }
 
+    // Kayıt işlemi
     try {
       setLoading(true);
       setError('');
       
-      // API isteği
       console.log('Kayıt bilgileri:', { ad, soyad, email, sifre });
-      console.log('API URL:', API_URL);
       
-      const response = await axios.post(`${API_URL}/auth/register`, {
-        ad,
-        soyad,
-        email,
-        sifre
-      });
+      // authService kullanarak kayıt ol
+      const userData = await authService.register({ ad, soyad, email, sifre });
       
-      console.log('Register response:', response.data);
-      setSuccess(true);
-      
-      // Başarılı kayıt sonrası kısa bir süre bekle ve giriş ekranına yönlendir
-      setTimeout(() => {
-        navigation.navigate('Login');
-      }, 2000);
-      
+      if (userData) {
+        console.log('Register success:', userData);
+        // Başarılı kayıt sonrası ana sayfaya yönlendir
+        navigation.replace('Home');
+      } else {
+        setError('Kayıt başarısız');
+      }
     } catch (error: any) {
       console.error('Register error:', error);
+      
       if (error.response) {
         // Sunucudan hata yanıtı alındı
         setError(error.response.data?.message || 'Kayıt başarısız');
@@ -115,12 +100,10 @@ const RegisterScreen = ({ navigation }: Props) => {
             resizeMode="contain"
           />
           <Text style={styles.title}>FIRDevs Mobile</Text>
-          <Text style={styles.subtitle}>Hesap Oluştur</Text>
         </View>
 
         <View style={styles.formContainer}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {success ? <Text style={styles.successText}>Kayıt başarılı! Giriş ekranına yönlendiriliyorsunuz...</Text> : null}
           
           <TextInput
             style={styles.input}
@@ -129,7 +112,6 @@ const RegisterScreen = ({ navigation }: Props) => {
             onChangeText={setAd}
             autoCapitalize="words"
             placeholderTextColor="#666"
-            editable={!loading && !success}
           />
           
           <TextInput
@@ -139,7 +121,6 @@ const RegisterScreen = ({ navigation }: Props) => {
             onChangeText={setSoyad}
             autoCapitalize="words"
             placeholderTextColor="#666"
-            editable={!loading && !success}
           />
           
           <TextInput
@@ -150,7 +131,6 @@ const RegisterScreen = ({ navigation }: Props) => {
             keyboardType="email-address"
             autoCapitalize="none"
             placeholderTextColor="#666"
-            editable={!loading && !success}
           />
           
           <TextInput
@@ -160,7 +140,6 @@ const RegisterScreen = ({ navigation }: Props) => {
             onChangeText={setSifre}
             secureTextEntry
             placeholderTextColor="#666"
-            editable={!loading && !success}
           />
           
           <TextInput
@@ -170,13 +149,12 @@ const RegisterScreen = ({ navigation }: Props) => {
             onChangeText={setSifreTekrar}
             secureTextEntry
             placeholderTextColor="#666"
-            editable={!loading && !success}
           />
 
           <TouchableOpacity 
-            style={[styles.registerButton, (loading || success) && styles.disabledButton]} 
+            style={styles.registerButton} 
             onPress={handleRegister}
-            disabled={loading || success}
+            disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
@@ -184,13 +162,12 @@ const RegisterScreen = ({ navigation }: Props) => {
               <Text style={styles.registerButtonText}>Kayıt Ol</Text>
             )}
           </TouchableOpacity>
-          
+
           <TouchableOpacity 
-            style={styles.loginLink} 
+            style={styles.loginButton} 
             onPress={() => navigation.navigate('Login')}
-            disabled={loading}
           >
-            <Text style={styles.loginLinkText}>Zaten hesabınız var mı? Giriş yapın</Text>
+            <Text style={styles.loginText}>Zaten hesabınız var mı? Giriş Yapın</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -201,12 +178,6 @@ const RegisterScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   errorText: {
     color: 'red',
-    fontSize: 14,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  successText: {
-    color: 'green',
     fontSize: 14,
     marginBottom: 10,
     textAlign: 'center',
@@ -233,11 +204,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#1a73e8',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#666',
     marginBottom: 10,
   },
   formContainer: {
@@ -259,19 +225,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  disabledButton: {
-    backgroundColor: '#a0c4f0',
-  },
   registerButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  loginLink: {
+  loginButton: {
     marginTop: 20,
     alignItems: 'center',
   },
-  loginLinkText: {
+  loginText: {
     color: '#1a73e8',
     fontSize: 16,
   },

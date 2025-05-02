@@ -1,8 +1,17 @@
 // src/store/types.ts
-import store from './index';
+// Circular dependency kaldırıldı
+// import store from './index'; - Bu satırı kaldırdık çünkü dairesel bağımlılık oluşturuyor
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+// Store tiplerini doğrudan tanımlıyoruz
+export interface RootState {
+  auth: AuthState;
+  posts: PostsState;
+  projects: ProjectsState;
+  notifications: NotificationsState;
+  profile: ProfileState;
+}
+
+export type AppDispatch = any; // Tam tipi, dairesel bağımlılığı kırmak için any olarak belirledik
 
 export interface User {
     id: string;

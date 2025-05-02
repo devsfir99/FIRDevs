@@ -1,7 +1,7 @@
 // src/services/websocket.ts
 import { io, Socket } from 'socket.io-client';
-import store from '../store/index';
-import { addNotification } from '../store/slices/notificationsSlice';
+import { store } from '../store';
+import { addNotification } from '../store/slices/notificationSlice';
 import { Dispatch } from '@reduxjs/toolkit';
 import { Notification } from '../store/types';
 

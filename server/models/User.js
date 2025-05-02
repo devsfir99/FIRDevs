@@ -30,7 +30,20 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 6
   },
+  bio: {
+    type: String,
+    default: '',
+    maxlength: 200
+  },
+  profileImage: {
+    type: String,
+    default: ''
+  },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }
@@ -49,6 +62,12 @@ userSchema.pre('save', async function(next) {
   } else {
     next();
   }
+});
+
+// Güncelleme yaparken tarihi otomatik güncelle
+userSchema.pre('findOneAndUpdate', function(next) {
+  this.set({ updatedAt: new Date() });
+  next();
 });
 
 // Şifre doğrulama yöntemi

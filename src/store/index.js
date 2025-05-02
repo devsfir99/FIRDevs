@@ -1,16 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import postsReducer from './slices/postsSlice';
-import projectsReducer from './slices/projectsSlice';
-import notificationsReducer from './slices/notificationsSlice';
+import projectReducer from './slices/projectsSlice';
+import notificationReducer from './slices/notificationSlice';
+import searchReducer from './slices/searchSlice';
 import profileReducer from './slices/profileSlice';
 
 const store = configureStore({
   reducer: {
     auth: authReducer,
     posts: postsReducer,
-    projects: projectsReducer,
-    notifications: notificationsReducer,
+    projects: projectReducer,
+    notifications: notificationReducer,
+    search: searchReducer,
     profile: profileReducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -18,8 +20,5 @@ const store = configureStore({
       serializableCheck: false,
     }),
 });
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
 
 export default store; 

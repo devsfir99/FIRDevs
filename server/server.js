@@ -33,8 +33,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/firdevsmo
       const authRoutes = require('./routes/auth');
       app.use('/api/auth', authRoutes);
       console.log('Auth routes yüklendi');
+      
+      const userRoutes = require('./routes/user');
+      app.use('/api/user', userRoutes);
+      console.log('User routes yüklendi');
     } catch (error) {
-      console.error('Auth routes yüklenirken hata:', error);
+      console.error('Routes yüklenirken hata:', error);
     }
 
     // Test endpoint

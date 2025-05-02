@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView ,Image, FlatList} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image, FlatList, ActivityIndicator, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { mockNotifications } from '../../services/mockData';
-import { Notification } from '../../types/post';
-
+import authService from '../../services/authService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import Logo from '../../assets/logo.png';
 import ProjectsLogo from '../../assets/projects.png';
@@ -16,7 +15,6 @@ import NotificationLogo from '../../assets/notification.png';
 import ProfileLogo from '../../assets/social.png';
 import UserAvatarLogo from '../../assets/user-avatar.png';
 import LogoutLogo from '../../assets/logout.png'
-
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -30,9 +28,76 @@ interface SharedPost {
   date: string;
 }
 
+// Kullanıcı profil tipi
+interface UserProfile {
+  _id: string;
+  ad: string;
+  soyad: string;
+  email: string;
+  bio?: string;
+  profileImage?: string;
+  createdAt?: string;
+}
+
 const ProfileScreen = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const [isSharedPostsExpanded, setIsSharedPostsExpanded] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Kullanıcı profilini yükle
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // AsyncStorage'dan kullanıcı verilerini al
+        const userData = await authService.getCurrentUser();
+        if (userData) {
+          setUserProfile(userData);
+        } else {
+          // Eğer yerel depolamada yoksa API'den getir
+          const profile = await authService.getProfile();
+          setUserProfile(profile);
+        }
+      } catch (err) {
+        console.error('Profil yükleme hatası:', err);
+        setError('Profil bilgileri yüklenirken bir hata oluştu');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
+
+  // Çıkış yapma işlemi
+  const handleLogout = async () => {
+    Alert.alert(
+      'Çıkış Yap',
+      'Hesabınızdan çıkış yapmak istediğinize emin misiniz?',
+      [
+        {
+          text: 'İptal',
+          style: 'cancel'
+        },
+        {
+          text: 'Çıkış Yap',
+          onPress: async () => {
+            try {
+              await authService.logout();
+              navigation.replace('Login');
+            } catch (err) {
+              console.error('Çıkış yapma hatası:', err);
+              Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   // Örnek paylaşılan gönderiler
   const sharedPosts: SharedPost[] = [
@@ -81,6 +146,32 @@ const ProfileScreen = () => {
       </View>
     </TouchableOpacity>
   );
+
+  // Yükleniyor durumu
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1a73e8" />
+        <Text style={styles.loadingText}>Profil yükleniyor...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Hata durumu
+  if (error) {
+    return (
+      <SafeAreaView style={styles.errorContainer}>
+        <Icon name="alert-circle-outline" size={64} color="#ff6b6b" />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Text style={styles.retryButtonText}>Ana Sayfaya Dön</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -132,9 +223,9 @@ const ProfileScreen = () => {
               <Icon name="camera" size={20} color="#fff" />
             </TouchableOpacity>*/}
           </View>
-          <Text style={styles.userName}>Oğulcan Demir</Text>
-          <Text style={styles.userEmail}>240541016@firat.edu.tr</Text>
-          <Text style={styles.userBio}>React Native Developer | FIRDevs Member</Text>
+          <Text style={styles.userName}>{userProfile?.ad} {userProfile?.soyad}</Text>
+          <Text style={styles.userEmail}>{userProfile?.email}</Text>
+          <Text style={styles.userBio}>{userProfile?.bio || 'FIRDevs Üyesi'}</Text>
         </View>
 
         {/*<View style={styles.statsContainer}>
@@ -225,8 +316,9 @@ const ProfileScreen = () => {
           </TouchableOpacity>
         </View>
         <View style={styles.section}>
-          <TouchableOpacity style={styles.logoutButton}
-            onPress={() => navigation.navigate('Login')}
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
           >
             <Image
               source={LogoutLogo}
@@ -248,84 +340,56 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   header: {
-    backgroundColor: '#1a73e8',
-    paddingTop: 15,
-    paddingBottom: 15,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    backgroundColor: '#fff',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
   },
   headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+  },
+  headerLogo: {
+    width: 35,
+    height: 35,
   },
   backButton: {
     padding: 5,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#333',
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
-  headerLogo: {
-    width: 40,
-    height: 40,
+  headerButton: {
+    padding: 5,
+    marginLeft: 15,
   },
   iconStyle: {
-    width: 24,
-    height: 24,
-  },
-  headerButton: {
-    marginRight :0,
-    width: 40, 
-    height: 40, 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
+    width: 25,
+    height: 25,
   },
   content: {
     flex: 1,
-  },
-ProfileScreenContainer:{
-  flexDirection: 'row',
-  backgroundColor: '#fff',
-    borderRadius: 15,
     padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
 },
-
   profileHeader: {
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
   avatarContainer: {
     position: 'relative',
@@ -336,150 +400,148 @@ ProfileScreenContainer:{
     height: 100,
     borderRadius: 50,
     backgroundColor: '#1a73e8',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
   },
   editAvatarButton: {
     position: 'absolute',
+    bottom: 5,
     right: 0,
-    bottom: 0,
     backgroundColor: '#1a73e8',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#fff',
   },
   userName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 5,
   },
   userEmail: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 5,
-  },
-  userBio: {
     fontSize: 14,
     color: '#666',
+    marginBottom: 10,
+  },
+  userBio: {
+    fontSize: 16,
+    color: '#555',
     textAlign: 'center',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    padding: 20,
+    padding: 15,
     backgroundColor: '#fff',
-    marginHorizontal: 20,
-    borderRadius: 15,
+    borderRadius: 10,
+    marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 5,
+    elevation: 3,
   },
   statItem: {
     alignItems: 'center',
+    flexDirection: 'row',
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 5,
   },
   statLabel: {
     fontSize: 14,
     color: '#666',
   },
+  statText: {
+    marginLeft: 5,
+    color: '#666',
+  },
   section: {
     backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 15,
+    borderRadius: 10,
     padding: 15,
+    marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 10,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#f0f0f0',
   },
   menuText: {
-    flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#555',
     marginLeft: 15,
+    flex: 1,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
-    margin: 20,
     padding: 15,
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   logoutText: {
+    color: '#ff6b6b',
     fontSize: 16,
-    color: '#ff3b30',
+    fontWeight: '600',
     marginLeft: 10,
   },
   sharedPostCard: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
+    flexDirection: 'row',
     marginBottom: 15,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 2,
+    elevation: 2,
   },
   sharedPostImage: {
-    width: '100%',
-    height: 200,
-    resizeMode: 'cover',
+    width: 100,
+    height: 100,
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
   },
   sharedPostContent: {
-    padding: 15,
+    flex: 1,
+    padding: 10,
   },
   sharedPostTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   sharedPostDescription: {
     fontSize: 14,
@@ -488,23 +550,48 @@ ProfileScreenContainer:{
   },
   sharedPostStats: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   sharedPostDate: {
     fontSize: 12,
-    color: '#666',
+    color: '#999',
   },
-  statText: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  loadingText: {
+    marginTop: 10,
     fontSize: 16,
     color: '#666',
-    marginLeft: 5,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
+    backgroundColor: '#f8f9fa',
+    padding: 20,
+  },
+  errorText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#1a73e8',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

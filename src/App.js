@@ -5,20 +5,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 import { Provider } from 'react-redux';
-import { store } from './store';
+import store from './store';
 import { colors } from './theme/colors';
 
 import LoginScreen from './screens/auth/LoginScreen';
 import RegisterScreen from './screens/auth/RegisterScreen';
 import HomeScreen from './screens/main/HomeScreen';
 import PostDetailScreen from './screens/main/PostDetailScreen';
-import ProfileScreen from './screens/profile/ProfileScreen';
+import ProfileScreen from './screens/main/ProfileScreen';
 import ProjectDetailScreen from './screens/main/ProjectDetailScreen';
 import CreatePostScreen from './screens/main/CreatePostScreen';
 import CreateProjectScreen from './screens/main/CreateProjectScreen';
 import SearchScreen from './screens/main/SearchScreen';
 import NotificationsScreen from './screens/main/NotificationsScreen';
-import EditProfileScreen from './screens/profile/EditProfileScreen';
+import EditProfileScreen from './screens/main/EditProfileScreen';
 import ProjectsScreen from './screens/main/ProjectsScreen';
 import SocialScreen from './screens/main/SocialScreen';
 

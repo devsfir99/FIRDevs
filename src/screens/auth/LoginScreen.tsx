@@ -14,8 +14,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+import authService from '../../services/authService';
 
 // Logo importları
 import Logo from '../../assets/logo.png';
@@ -23,14 +22,6 @@ import Logo from '../../assets/logo.png';
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
 };
-
-// API URL - Geliştirme ve farklı ortamlar için değiştirilebilir
-// iOS Simulator için: 'http://localhost:3001/api'
-// Android Emulator için: 'http://10.0.2.2:3001/api'
-// Gerçek cihaz için bilgisayarın IP adresi: 'http://192.168.1.X:3001/api'
-const API_URL = Platform.OS === 'ios' 
-  ? 'http://localhost:3001/api' 
-  : 'http://10.0.2.2:3001/api';
 
 const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState('');
@@ -56,21 +47,18 @@ const LoginScreen = ({ navigation }: Props) => {
       setError('');
       
       console.log('Giriş bilgileri:', { email, sifre });
-      console.log('API URL:', API_URL);
       
-      // API isteği
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        email,
-        sifre
-      });
+      // authService kullanarak giriş yap
+      const userData = await authService.login(email, sifre);
       
-      console.log('Login response:', response.data);
-      
-      // Token'ı kaydet
-      await AsyncStorage.setItem('token', response.data.token);
-      
-      // Ana sayfaya yönlendir
+      if (userData) {
+        console.log('Login success:', userData);
+        // Ana sayfaya yönlendir
       navigation.replace('Home');
+    } else {
+        setError('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
+      }
+      
     } catch (error: any) {
       console.error('Login error:', error);
       
@@ -133,7 +121,7 @@ const LoginScreen = ({ navigation }: Props) => {
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.loginButtonText}>Giriş Yap</Text>
+            <Text style={styles.loginButtonText}>Giriş Yap</Text>
             )}
           </TouchableOpacity>
 
