@@ -65,7 +65,13 @@ const RegisterScreen = ({ navigation }: Props) => {
       
       if (userData) {
         console.log('Register success:', userData);
-        // Başarılı kayıt sonrası ana sayfaya yönlendir
+        
+        // Kayıt başarılı, token'ı kaydet ve otomatik giriş yap
+        if (userData.token) {
+          await authService.login(email, sifre);
+        }
+        
+        // Ana sayfaya yönlendir
         navigation.replace('Home');
       } else {
         setError('Kayıt başarısız');

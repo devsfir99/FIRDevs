@@ -53,14 +53,39 @@ const ProfileScreen = () => {
         setLoading(true);
         setError(null);
         
+        // Token kontrolü
+        const token = await AsyncStorage.getItem('token');
+        
         // AsyncStorage'dan kullanıcı verilerini al
         const userData = await authService.getCurrentUser();
+        
         if (userData) {
           setUserProfile(userData);
+          
+          // Token yoksa ama kullanıcı verisi varsa profil bilgilerini API'den getir
+          if (!token) {
+            console.log('Token yok ama kullanıcı verisi var, yeniden deneniyor...');
+            
+            // Kısa bir süre bekle ve profil bilgilerini getirmeyi tekrar dene
+            setTimeout(async () => {
+              try {
+                const profile = await authService.getProfile();
+                if (profile) {
+                  setUserProfile(profile);
+                }
+              } catch (retryErr) {
+                console.error('Profil yeniden yükleme hatası:', retryErr);
+              }
+            }, 500);
+          }
         } else {
-          // Eğer yerel depolamada yoksa API'den getir
-          const profile = await authService.getProfile();
-          setUserProfile(profile);
+          // Kullanıcı verisi yoksa API'den profil bilgilerini getir
+          if (token) {
+            const profile = await authService.getProfile();
+            setUserProfile(profile);
+          } else {
+            setError('Profil bilgileri bulunamadı. Lütfen tekrar giriş yapın.');
+          }
         }
       } catch (err) {
         console.error('Profil yükleme hatası:', err);

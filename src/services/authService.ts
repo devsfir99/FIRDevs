@@ -73,6 +73,13 @@ const authService = {
   register: async (userData: { ad: string, soyad: string, email: string, sifre: string }) => {
     try {
       const response = await axios.post(`${API_URL}/auth/register`, userData);
+      
+      // Başarılı kayıt sonrası token ve kullanıcı bilgilerini kaydet
+      if (response.data && response.data.token) {
+        await AsyncStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.data));
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Register error:', error);
