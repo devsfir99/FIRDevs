@@ -98,8 +98,45 @@ const EditProfileScreen = () => {
     }
   };
 
+  const handleKeyPress = (e: any) => {
+    if (e.nativeEvent.key === 'Enter' && newSkill) {
+      handleAddSkill();
+    }
+  };
+
   const handleRemoveSkill = (skillToRemove: string) => {
     setSkills(skills.filter(skill => skill !== skillToRemove));
+  };
+
+  const validateSocialMediaUrls = (urls: {
+    github?: string,
+    linkedin?: string,
+    twitter?: string,
+    instagram?: string
+  }) => {
+    const validatedUrls: typeof urls = {};
+    
+    // GitHub formatı: kullanıcı adı veya https://github.com/kullanıcı-adı
+    if (urls.github) {
+      validatedUrls.github = urls.github.startsWith('http') ? urls.github : urls.github;
+    }
+    
+    // LinkedIn formatı: kullanıcı adı veya https://linkedin.com/in/kullanıcı-adı
+    if (urls.linkedin) {
+      validatedUrls.linkedin = urls.linkedin.startsWith('http') ? urls.linkedin : urls.linkedin;
+    }
+    
+    // Twitter formatı: kullanıcı adı veya https://twitter.com/kullanıcı-adı
+    if (urls.twitter) {
+      validatedUrls.twitter = urls.twitter.startsWith('http') ? urls.twitter : urls.twitter;
+    }
+    
+    // Instagram formatı: kullanıcı adı veya https://instagram.com/kullanıcı-adı
+    if (urls.instagram) {
+      validatedUrls.instagram = urls.instagram.startsWith('http') ? urls.instagram : urls.instagram;
+    }
+    
+    return validatedUrls;
   };
 
   const handleSave = async () => {
@@ -116,27 +153,68 @@ const EditProfileScreen = () => {
       const ad = nameParts[0];
       const soyad = nameParts.slice(1).join(' ');
       
+      // Sosyal medya URL'lerini kontrol et
+      const validatedSocialMedia = validateSocialMediaUrls({
+        github,
+        linkedin,
+        twitter,
+        instagram
+      });
+      
       // Profil güncellemesi için verileri hazırla
       const profileData = {
         ad,
         soyad,
-        fakulte,
-        bolum,
-        bio,
-        skills,
-        socialMedia: {
-          github,
-          linkedin,
-          twitter,
-          instagram
-        }
+        fakulte: fakulte.trim(),
+        bolum: bolum.trim(),
+        bio: bio.trim(),
+        skills: skills.filter(skill => skill.trim() !== ''),
+        socialMedia: validatedSocialMedia
       };
       
-      // Profili güncelle
-      await authService.updateProfile(profileData);
+      console.log('Profil güncelleme verileri:', JSON.stringify(profileData, null, 2));
+      console.log('- fakulte:', profileData.fakulte);
+      console.log('- bolum:', profileData.bolum);
+      console.log('- bio:', profileData.bio);
+      console.log('- skills:', profileData.skills);
+      console.log('- socialMedia:', JSON.stringify(profileData.socialMedia, null, 2));
       
-      Alert.alert('Başarılı', 'Profil bilgileriniz güncellendi');
-      navigation.goBack();
+      // Profili güncelle
+      const updatedUser = await authService.updateProfile(profileData);
+      
+      console.log('Güncellenmiş kullanıcı verileri:');
+      console.log('- _id:', updatedUser?._id);
+      console.log('- ad:', updatedUser?.ad);
+      console.log('- soyad:', updatedUser?.soyad);
+      console.log('- fakulte:', updatedUser?.fakulte || 'boş');
+      console.log('- bolum:', updatedUser?.bolum || 'boş');
+      console.log('- bio:', updatedUser?.bio || 'boş');
+      console.log('- skills:', updatedUser?.skills ? JSON.stringify(updatedUser.skills) : 'boş');
+      console.log('- socialMedia:', updatedUser?.socialMedia ? JSON.stringify(updatedUser.socialMedia) : 'boş');
+      
+      // Güncelleme başarılı mı kontrol et
+      const isSuccess = updatedUser && 
+        (profileData.fakulte === updatedUser?.fakulte) &&
+        (profileData.bolum === updatedUser?.bolum) &&
+        (profileData.bio === updatedUser?.bio);
+      
+      if (!isSuccess) {
+        console.error('Profil güncellemesi kısmen başarılı oldu, bazı alanlar güncellenmemiş olabilir.');
+      }
+        
+      Alert.alert(
+        'Başarılı', 
+        'Profil bilgileriniz güncellendi' + 
+        (isSuccess ? '' : ' (Bazı alanlar güncellenememiş olabilir)'),
+        [
+          {
+            text: 'Tamam',
+            onPress: () => {
+              navigation.goBack();
+            }
+          }
+        ]
+      );
     } catch (error) {
       console.error('Profil güncelleme hatası:', error);
       Alert.alert('Hata', 'Profil bilgileri güncellenirken bir hata oluştu.');
@@ -229,6 +307,7 @@ const EditProfileScreen = () => {
                 value={fakulte}
                 onChangeText={setFakulte}
                 placeholderTextColor="#666"
+                autoCapitalize="none"
               />
             </View>
 
@@ -240,6 +319,7 @@ const EditProfileScreen = () => {
                 value={bolum}
                 onChangeText={setBolum}
                 placeholderTextColor="#666"
+                autoCapitalize="none"
               />
             </View>
 
@@ -252,6 +332,7 @@ const EditProfileScreen = () => {
                 onChangeText={setBio}
                 multiline
                 placeholderTextColor="#666"
+                autoCapitalize="none"
               />
             </View>
           </View>
@@ -277,7 +358,11 @@ const EditProfileScreen = () => {
                 placeholder="Yeni yetkinlik ekle"
                 value={newSkill}
                 onChangeText={setNewSkill}
+                onKeyPress={handleKeyPress}
                 placeholderTextColor="#666"
+                returnKeyType="done"
+                onSubmitEditing={handleAddSkill}
+                autoCapitalize="none"
               />
               <TouchableOpacity 
                 style={styles.addSkillButton}
@@ -298,6 +383,7 @@ const EditProfileScreen = () => {
                 value={github}
                 onChangeText={setGithub}
                 placeholderTextColor="#666"
+                autoCapitalize="none"
               />
             </View>
 
@@ -305,10 +391,11 @@ const EditProfileScreen = () => {
               <Icon name="linkedin" size={24} color="#1a73e8" />
               <TextInput
                 style={styles.input}
-                placeholder="LinkedIn Profil URL"
+                placeholder="LinkedIn Kullanıcı Adı"
                 value={linkedin}
                 onChangeText={setLinkedin}
                 placeholderTextColor="#666"
+                autoCapitalize="none"
               />
             </View>
 
@@ -320,6 +407,7 @@ const EditProfileScreen = () => {
                 value={twitter}
                 onChangeText={setTwitter}
                 placeholderTextColor="#666"
+                autoCapitalize="none"
               />
             </View>
 
@@ -331,6 +419,7 @@ const EditProfileScreen = () => {
                 value={instagram}
                 onChangeText={setInstagram}
                 placeholderTextColor="#666"
+                autoCapitalize="none"
               />
             </View>
           </View>

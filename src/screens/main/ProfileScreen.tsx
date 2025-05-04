@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image, FlatList, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image, FlatList, ActivityIndicator, Alert, Animated, Linking } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import authService from '../../services/authService';
@@ -34,7 +34,16 @@ interface UserProfile {
   ad: string;
   soyad: string;
   email: string;
+  fakulte?: string;
+  bolum?: string;
   bio?: string;
+  skills?: string[];
+  socialMedia?: {
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+  };
   profileImage?: string;
   createdAt?: string;
 }
@@ -45,58 +54,218 @@ const ProfileScreen = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Animasyon değerleri
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
 
-  // Kullanıcı profilini yükle
-  useEffect(() => {
-    const loadUserProfile = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Token kontrolü
-        const token = await AsyncStorage.getItem('token');
-        
-        // AsyncStorage'dan kullanıcı verilerini al
-        const userData = await authService.getCurrentUser();
-        
-        if (userData) {
-          setUserProfile(userData);
+  // Profil verilerini yükle
+  const loadUserProfile = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Token kontrolü
+      const token = await AsyncStorage.getItem('token');
+      
+      // API'den güncel profil bilgilerini getir
+      if (token) {
+        const profile = await authService.getProfile();
+        if (profile) {
+          setUserProfile(profile);
           
-          // Token yoksa ama kullanıcı verisi varsa profil bilgilerini API'den getir
-          if (!token) {
-            console.log('Token yok ama kullanıcı verisi var, yeniden deneniyor...');
-            
-            // Kısa bir süre bekle ve profil bilgilerini getirmeyi tekrar dene
-            setTimeout(async () => {
-              try {
-                const profile = await authService.getProfile();
-                if (profile) {
-                  setUserProfile(profile);
-                }
-              } catch (retryErr) {
-                console.error('Profil yeniden yükleme hatası:', retryErr);
-              }
-            }, 500);
-          }
-        } else {
-          // Kullanıcı verisi yoksa API'den profil bilgilerini getir
-          if (token) {
-            const profile = await authService.getProfile();
-            setUserProfile(profile);
-          } else {
-            setError('Profil bilgileri bulunamadı. Lütfen tekrar giriş yapın.');
-          }
+          // Animasyonları başlat
+          Animated.parallel([
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 800,
+              useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+              toValue: 0,
+              duration: 800,
+              useNativeDriver: true,
+            })
+          ]).start();
+          
+          return;
         }
-      } catch (err) {
-        console.error('Profil yükleme hatası:', err);
-        setError('Profil bilgileri yüklenirken bir hata oluştu');
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      // Token yoksa veya API isteği başarısız olursa AsyncStorage'dan al
+      const userData = await authService.getCurrentUser();
+      if (userData) {
+        setUserProfile(userData);
+        
+        // Animasyonları başlat
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          })
+        ]).start();
+      } else {
+        setError('Profil bilgileri bulunamadı. Lütfen tekrar giriş yapın.');
+      }
+    } catch (err) {
+      console.error('Profil yükleme hatası:', err);
+      setError('Profil bilgileri yüklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // İlk yükleme
+  useEffect(() => {
     loadUserProfile();
   }, []);
+  
+  // Ekran odaklandığında profili yenile
+  useFocusEffect(
+    useCallback(() => {
+      console.log('[ProfileScreen] Ekran odaklandı, profil verileri yenileniyor...');
+      
+      // Animasyon değerlerini sıfırla
+      fadeAnim.setValue(0);
+      slideAnim.setValue(50);
+      
+      let isMounted = true;
+      
+      const refreshProfile = async () => {
+        try {
+          if (!isMounted) return;
+          
+          setLoading(true);
+          
+          // Token kontrolü
+          const token = await AsyncStorage.getItem('token');
+          
+          if (!token) {
+            if (isMounted) {
+              setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+              setLoading(false);
+            }
+            return;
+          }
+          
+          console.log('[ProfileScreen] Güncel profil bilgileri alınıyor...');
+          
+          // Öncelikle AsyncStorage'dan son kullanıcı verilerini al
+          const userDataJson = await AsyncStorage.getItem('user');
+          
+          if (userDataJson) {
+            const userData = JSON.parse(userDataJson);
+            console.log('[ProfileScreen] AsyncStorage\'dan profil verileri yüklendi:', JSON.stringify(userData, null, 2));
+            
+            if (isMounted) {
+              setUserProfile(userData);
+              setLoading(false);
+              setError(null);
+              
+              // Animasyonları başlat
+              Animated.parallel([
+                Animated.timing(fadeAnim, {
+                  toValue: 1,
+                  duration: 800,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(slideAnim, {
+                  toValue: 0,
+                  duration: 800,
+                  useNativeDriver: true,
+                }),
+              ]).start();
+            }
+          } else {
+            // AsyncStorage'da kullanıcı yoksa API'den getir
+            try {
+              // API'den güncel profil bilgilerini getir
+              const profile = await authService.getProfile();
+              
+              if (isMounted) {
+                setUserProfile(profile);
+                setLoading(false);
+                setError(null);
+                
+                // Animasyonları başlat  
+                Animated.parallel([
+                  Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                  }),
+                  Animated.timing(slideAnim, {
+                    toValue: 0,
+                    duration: 800,
+                    useNativeDriver: true,
+                  }),
+                ]).start();
+              }
+            } catch (apiErr) {
+              console.error('[ProfileScreen] API\'den profil getirme hatası:', apiErr);
+              if (isMounted) {
+                setError('Profil bilgileri yüklenirken bir hata oluştu.');
+                setLoading(false);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[ProfileScreen] Profil yenilenirken hata:', err);
+          
+          if (isMounted) {
+            setError('Profil bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+            setLoading(false);
+          }
+        }
+      };
+      
+      // Ekran odaklandığında her zaman yeni verileri yükle
+      refreshProfile();
+      
+      // Cleanup fonksiyonu
+      return () => {
+        isMounted = false;
+      };
+    }, []) // Dependency array'i boş bırakıyoruz çünkü ekran her odaklandığında çalışmasını istiyoruz
+  );
+
+  // Sosyal medya bağlantılarını aç
+  const openSocialMedia = (url: string | undefined, platform: string) => {
+    if (!url) {
+      Alert.alert('Hata', `${platform} profil bağlantısı ayarlanmamış.`);
+      return;
+    }
+    
+    let fullUrl = url;
+    
+    // URL formatını kontrol et
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      switch (platform) {
+        case 'GitHub':
+          fullUrl = `https://github.com/${url}`;
+          break;
+        case 'LinkedIn':
+          fullUrl = `https://linkedin.com/in/${url}`;
+          break;
+        case 'Twitter':
+          fullUrl = `https://twitter.com/${url}`;
+          break;
+        case 'Instagram':
+          fullUrl = `https://instagram.com/${url}`;
+          break;
+      }
+    }
+    
+    Linking.openURL(fullUrl).catch(err => {
+      Alert.alert('Hata', `${platform} profil bağlantısı açılamadı: ${err.message}`);
+    });
+  };
 
   // Çıkış yapma işlemi
   const handleLogout = async () => {
@@ -206,155 +375,243 @@ const ProfileScreen = () => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Image 
-            source={Logo} 
-            style={styles.headerLogo}
-            resizeMode="contain"
-          />
+            <Icon name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profil</Text>
           <View style={styles.headerRight}>
             <TouchableOpacity 
               style={styles.headerButton}
-              onPress={() => navigation.navigate('Search')}
+              onPress={() => navigation.navigate('EditProfile')}
             >
-              <Image 
-            source={SearchLogo} 
-            style={styles.iconStyle}
-            resizeMode="contain"
-          />
+              <Icon name="pencil" size={24} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
-              onPress={() => navigation.navigate('Notifications')}
+              onPress={handleLogout}
             >
-              <Image 
-            source={NotificationLogo} 
-            style={styles.iconStyle}
-            resizeMode="contain"
-          />
+              <Icon name="logout" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Icon name="account" size={40} color="#fff" />
+        {/* Profil Üst Kısmı */}
+        <Animated.View 
+          style={[
+            styles.profileHeader, 
+            { 
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }] 
+            }
+          ]}
+        >
+          <View style={styles.profileHeaderContent}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                {userProfile?.profileImage ? (
+                  <Image
+                    source={{ uri: userProfile.profileImage }}
+                    style={styles.avatarImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Icon name="account" size={60} color="#fff" />
+                )}
+              </View>
             </View>
-            {/*<TouchableOpacity style={styles.editAvatarButton}>
-              <Icon name="camera" size={20} color="#fff" />
-            </TouchableOpacity>*/}
+            
+            <View style={styles.userInfoContainer}>
+              <Text style={styles.userName}>
+                {userProfile?.ad} {userProfile?.soyad}
+              </Text>
+              <Text style={styles.userEmail}>{userProfile?.email}</Text>
+              
+              {userProfile?.fakulte && userProfile?.bolum && (
+                <View style={styles.educationContainer}>
+                  <Icon name="school" size={16} color="#666" />
+                  <Text style={styles.educationText}>
+                    {userProfile.fakulte}, {userProfile.bolum}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-          <Text style={styles.userName}>{userProfile?.ad} {userProfile?.soyad}</Text>
-          <Text style={styles.userEmail}>{userProfile?.email}</Text>
-          <Text style={styles.userBio}>{userProfile?.bio || 'FIRDevs Üyesi'}</Text>
-        </View>
-
-        {/*<View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Projeler</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>2100</Text>
-            <Text style={styles.statLabel}>Takipçi</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>48</Text>
-            <Text style={styles.statLabel}>Takip</Text>
-          </View>
-        </View>*/}
-
-        <View style={styles.section}>
-          <TouchableOpacity 
-            style={styles.sectionHeader}
-            onPress={() => setIsSharedPostsExpanded(!isSharedPostsExpanded)}
-          >
-            <Text style={styles.sectionTitle}>Paylaşılan Gönderiler</Text>
-            <Icon 
-              name={isSharedPostsExpanded ? "chevron-up" : "chevron-down"} 
-              size={24} 
-              color="#666" 
-            />
-          </TouchableOpacity>
           
-          {isSharedPostsExpanded && (
+          {userProfile?.bio && (
+            <View style={styles.bioContainer}>
+              <Text style={styles.bioText}>{userProfile.bio}</Text>
+            </View>
+          )}
+          
+          {/* Sosyal Medya Linkleri */}
+          {userProfile?.socialMedia && Object.values(userProfile.socialMedia).some(value => value) && (
+            <View style={styles.socialLinksContainer}>
+              {userProfile.socialMedia.github && (
+                <TouchableOpacity 
+                  style={styles.socialButton}
+                  onPress={() => openSocialMedia(userProfile.socialMedia?.github, 'GitHub')}
+                >
+                  <Icon name="github" size={24} color="#333" />
+                </TouchableOpacity>
+              )}
+              {userProfile.socialMedia.linkedin && (
+                <TouchableOpacity 
+                  style={styles.socialButton}
+                  onPress={() => openSocialMedia(userProfile.socialMedia?.linkedin, 'LinkedIn')}
+                >
+                  <Icon name="linkedin" size={24} color="#0077B5" />
+                </TouchableOpacity>
+              )}
+              {userProfile.socialMedia.twitter && (
+                <TouchableOpacity 
+                  style={styles.socialButton}
+                  onPress={() => openSocialMedia(userProfile.socialMedia?.twitter, 'Twitter')}
+                >
+                  <Icon name="twitter" size={24} color="#1DA1F2" />
+                </TouchableOpacity>
+              )}
+              {userProfile.socialMedia.instagram && (
+                <TouchableOpacity 
+                  style={styles.socialButton}
+                  onPress={() => openSocialMedia(userProfile.socialMedia?.instagram, 'Instagram')}
+                >
+                  <Icon name="instagram" size={24} color="#E1306C" />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </Animated.View>
+        
+        {/* Yetkinlikler Bölümü */}
+        {userProfile?.skills && userProfile.skills.length > 0 && (
+          <Animated.View 
+            style={[
+              styles.section, 
+              { 
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }] 
+              }
+            ]}
+          >
+            <View style={styles.sectionHeader}>
+              <Icon name="lightbulb-on" size={24} color="#1a73e8" />
+              <Text style={styles.sectionTitle}>Yetkinlikler</Text>
+            </View>
+            <View style={styles.skillsContainer}>
+              {userProfile.skills.map((skill, index) => (
+                <View key={index} style={styles.skillItem}>
+                  <Text style={styles.skillText}>{skill}</Text>
+                </View>
+              ))}
+            </View>
+          </Animated.View>
+        )}
+        
+        {/* Projeler Bölümü */}
+        <Animated.View 
+          style={[
+            styles.section, 
+            { 
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }] 
+            }
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <Icon name="folder-multiple" size={24} color="#1a73e8" />
+            <Text style={styles.sectionTitle}>Projeler</Text>
+            <TouchableOpacity
+              style={styles.expandButton}
+              onPress={() => setIsSharedPostsExpanded(!isSharedPostsExpanded)}
+            >
+              <Icon
+                name={isSharedPostsExpanded ? "chevron-up" : "chevron-down"}
+                size={24}
+                color="#1a73e8"
+              />
+            </TouchableOpacity>
+          </View>
+          
+          {isSharedPostsExpanded ? (
             <FlatList
               data={sharedPosts}
               renderItem={renderSharedPost}
               keyExtractor={item => item.id}
               scrollEnabled={false}
-              showsVerticalScrollIndicator={false}
             />
+          ) : (
+            sharedPosts.length > 0 && renderSharedPost({ item: sharedPosts[0] })
           )}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hesap Ayarları</Text>
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('EditProfile')}
-          >
-            <Image
-              source={UserAvatarLogo}
-              style={styles.iconStyle}
-              resizeMode="contain"
-            />
-            <Text style={styles.menuText}>Profili Düzenle</Text>
-            
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <Image
-              source={NotificationLogo}
-              style={styles.iconStyle}
-              resizeMode="contain"
-            />
-            <Text style={styles.menuText}>Bildirimler</Text>
-            
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.menuItem}
-            
-          >
-            <Icon name="lock-outline" size={24} color="#666" />
-            <Text style={styles.menuText}>Gizlilik</Text>
-            
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Yardım ve Destek</Text>
-          <TouchableOpacity style={styles.menuItem}>
-            <Icon name="help-circle-outline" size={24} color="#666" />
-            <Text style={styles.menuText}>Yardım Merkezi</Text>
-            <Icon name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <Icon name="message-outline" size={24} color="#666" />
-            <Text style={styles.menuText}>İletişim</Text>
-            <Icon name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.section}>
-          <TouchableOpacity 
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
-            <Image
-              source={LogoutLogo}
-              style={styles.iconStyle}
-              resizeMode="contain"
-            />
-            <Text style={styles.logoutText}>Çıkış Yap</Text>
-            
-          </TouchableOpacity>
-        </View>
+          
+          {sharedPosts.length === 0 && (
+            <View style={styles.emptyStateContainer}>
+              <Icon name="file-document-outline" size={48} color="#ccc" />
+              <Text style={styles.emptyStateText}>Henüz proje paylaşılmamış</Text>
+            </View>
+          )}
+        </Animated.View>
+        
+        {/* Katılım Tarihi */}
+        <Animated.View 
+          style={[
+            styles.joinDateContainer, 
+            { 
+              opacity: fadeAnim 
+            }
+          ]}
+        >
+          <Icon name="calendar-check" size={16} color="#666" />
+          <Text style={styles.joinDateText}>
+            {userProfile?.createdAt 
+              ? `Katılım: ${new Date(userProfile.createdAt).toLocaleDateString('tr-TR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}`
+              : 'Katılım tarihi bilinmiyor'}
+          </Text>
+        </Animated.View>
       </ScrollView>
+      
+      {/* Alt Menü */}
+      <View style={styles.bottomMenu}>
+        <TouchableOpacity
+          style={styles.bottomMenuItem}
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Image 
+            source={ProjectsLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
+          <Text style={styles.bottomMenuText}>Ana Sayfa</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.bottomMenuItem}
+          onPress={() => navigation.navigate('Projects')}
+        >
+          <Icon name="folder-multiple" size={24} color="#666" />
+          <Text style={styles.bottomMenuText}>Projeler</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.bottomMenuItem}
+          onPress={() => navigation.navigate('Social')}
+        >
+          <Icon name="account-group" size={24} color="#666" />
+          <Text style={styles.bottomMenuText}>Sosyal</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.bottomMenuItem, styles.activeBottomMenuItem]}
+          onPress={() => {}}
+        >
+          <Icon name="account-circle" size={24} color="#1a73e8" />
+          <Text style={[styles.bottomMenuText, styles.activeBottomMenuText]}>Profil</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -362,201 +619,254 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f9f9f9',
   },
   header: {
-    backgroundColor: '#fff',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eaeaea',
+    backgroundColor: '#1a73e8',
+    paddingTop: 15,
+    paddingBottom: 15,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   headerContent: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  headerLogo: {
-    width: 35,
-    height: 35,
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   backButton: {
     padding: 5,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   headerRight: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
   headerButton: {
     padding: 5,
-    marginLeft: 15,
-  },
-  iconStyle: {
-    width: 25,
-    height: 25,
+    marginLeft: 10,
   },
   content: {
     flex: 1,
-    padding: 15,
-},
-  profileHeader: {
-    alignItems: 'center',
     padding: 20,
+  },
+  profileHeader: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 15,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.15,
     shadowRadius: 5,
-    elevation: 3,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+  },
+  profileHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   avatarContainer: {
-    position: 'relative',
-    marginBottom: 15,
+    marginRight: 15,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
     backgroundColor: '#1a73e8',
-    alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-  },
-  editAvatarButton: {
-    position: 'absolute',
-    bottom: 5,
-    right: 0,
-    backgroundColor: '#1a73e8',
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
+    shadowColor: '#1a73e8',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+    borderWidth: 3,
     borderColor: '#fff',
   },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  userInfoContainer: {
+    flex: 1,
+  },
   userName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 5,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   userEmail: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+  },
+  educationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 50,
+    alignSelf: 'flex-start',
+  },
+  educationText: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 10,
+    marginLeft: 5,
+    fontWeight: '500',
   },
-  userBio: {
+  bioContainer: {
+    marginTop: 15,
+    padding: 15,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1a73e8',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  bioText: {
     fontSize: 16,
     color: '#555',
-    textAlign: 'center',
+    lineHeight: 22,
+    fontStyle: 'italic',
+    zIndex: 2,
   },
-  statsContainer: {
+  socialLinksContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 15,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    justifyContent: 'center',
+    marginTop: 20,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
   },
-  statItem: {
+  socialButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
     alignItems: 'center',
-    flexDirection: 'row',
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  statText: {
-    marginLeft: 5,
-    color: '#666',
+    marginHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    transform: [{ scale: 1 }],
   },
   section: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.15,
     shadowRadius: 5,
-    elevation: 3,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 10,
+    marginBottom: 15,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 10,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  menuText: {
-    fontSize: 16,
-    color: '#555',
-    marginLeft: 15,
-    flex: 1,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 15,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  logoutText: {
-    color: '#ff6b6b',
-    fontSize: 16,
-    fontWeight: '600',
     marginLeft: 10,
+    flex: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
-  sharedPostCard: {
+  expandButton: {
+    padding: 5,
+  },
+  skillsContainer: {
     flexDirection: 'row',
-    marginBottom: 15,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    overflow: 'hidden',
+    flexWrap: 'wrap',
+    marginTop: 10,
+  },
+  skillItem: {
+    backgroundColor: '#e8f0fe',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#d0e1fd',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
+  skillText: {
+    fontSize: 14,
+    color: '#1a73e8',
+    fontWeight: '500',
+  },
+  sharedPostCard: {
+    flexDirection: 'row',
+    marginBottom: 15,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+  },
   sharedPostImage: {
     width: 100,
     height: 100,
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
   },
   sharedPostContent: {
     flex: 1,
@@ -575,18 +885,90 @@ const styles = StyleSheet.create({
   },
   sharedPostStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  statText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 4,
   },
   sharedPostDate: {
     fontSize: 12,
-    color: '#999',
+    color: '#888',
+    marginLeft: 'auto',
+  },
+  emptyStateContainer: {
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#888',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  joinDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30,
+    backgroundColor: 'rgba(26, 115, 232, 0.08)',
+    padding: 8,
+    borderRadius: 50,
+    alignSelf: 'center',
+  },
+  joinDateText: {
+    fontSize: 14,
+    color: '#1a73e8',
+    marginLeft: 5,
+    fontWeight: '500',
+  },
+  bottomMenu: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -3,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 10,
+  },
+  bottomMenuItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 5,
+  },
+  bottomMenuText: {
+    fontSize: 12,
+    color: '#777',
+    marginTop: 3,
+  },
+  activeBottomMenuItem: {
+    borderTopWidth: 3,
+    borderTopColor: '#1a73e8',
+    backgroundColor: '#f8f9fa',
+  },
+  activeBottomMenuText: {
+    color: '#1a73e8',
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f9f9f9',
   },
   loadingText: {
     marginTop: 10,
@@ -597,14 +979,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
     padding: 20,
+    backgroundColor: '#f9f9f9',
   },
   errorText: {
-    marginTop: 10,
     fontSize: 16,
-    color: '#666',
+    color: '#ff6b6b',
     textAlign: 'center',
+    marginTop: 10,
     marginBottom: 20,
   },
   retryButton: {
@@ -612,11 +994,24 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
+    shadowColor: '#1a73e8',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   retryButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+  },
+  iconStyle: {
+    width: 24,
+    height: 24,
+    
   },
 });
 

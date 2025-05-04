@@ -141,23 +141,45 @@ const authService = {
   // Profil bilgilerini sunucudan alma
   getProfile: async () => {
     try {
+      console.log('[authService] getProfile isteği başlatılıyor');
+      
       const token = await AsyncStorage.getItem('token');
       if (!token) throw new Error('No token found');
       
-      const response = await axios.get(`${API_URL}/auth/me`, {
+      // /auth/me yerine /user/profile kullan - böylece tüm profil bilgileri 
+      // aynı endpoint'ten gelecek
+      const response = await axios.get(`${API_URL}/user/profile`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       
+      console.log('[authService] getProfile cevabı:', JSON.stringify(response.data, null, 2));
+      
       // Güncel kullanıcı bilgilerini güncelle
       if (response.data) {
-        await AsyncStorage.setItem('user', JSON.stringify(response.data));
+        // Önce mevcut verileri al
+        const existingUserJson = await AsyncStorage.getItem('user');
+        let existingUser = existingUserJson ? JSON.parse(existingUserJson) : {};
+        
+        // Token bilgisini koru
+        const updatedUser = { 
+          ...existingUser, 
+          ...response.data,
+          token: existingUser.token // Token bilgisini koru
+        };
+        
+        // Güncellenmiş veriyi kaydet
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        console.log('[authService] AsyncStorage (getProfile) güncellendi');
       }
       
       return response.data;
-    } catch (error) {
-      console.error('Get profile error:', error);
+    } catch (error: any) {
+      console.error('[authService] getProfile hatası:', error.message);
+      if (error.response) {
+        console.error('Hata detayları:', error.response.data);
+      }
       throw error;
     }
   },
@@ -165,23 +187,86 @@ const authService = {
   // Profil bilgilerini güncelleme
   updateProfile: async (profileData: Partial<User>) => {
     try {
+      console.log('[authService] updateProfile isteği başlatılıyor:', JSON.stringify(profileData, null, 2));
+      
       const token = await AsyncStorage.getItem('token');
       if (!token) throw new Error('No token found');
       
+      // API isteğini yap
       const response = await axios.put(`${API_URL}/user/profile`, profileData, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
-      // Güncel kullanıcı bilgilerini güncelle
-      if (response.data) {
-        await AsyncStorage.setItem('user', JSON.stringify(response.data));
+      console.log('[authService] updateProfile cevabı:', JSON.stringify(response.data, null, 2));
+      
+      // Cevap verilerini doğrula
+      if (!response.data) {
+        throw new Error('Sunucudan gelen yanıtta veri bulunamadı');
       }
       
-      return response.data;
-    } catch (error) {
-      console.error('Update profile error:', error);
+      // Güncel kullanıcı bilgilerini güncelle
+      try {
+        // Önce mevcut verileri al
+        const existingUserJson = await AsyncStorage.getItem('user');
+        if (!existingUserJson) {
+          throw new Error('Mevcut kullanıcı verileri bulunamadı');
+        }
+        
+        const existingUser = JSON.parse(existingUserJson) as User & { token: string };
+        
+        // Sunucudan gelen yanıt verilerini kontrol et
+        if (profileData.fakulte && !response.data.fakulte) {
+          console.warn('[authService] Uyarı: Sunucudan gelen yanıtta fakulte alanı eksik!');
+        }
+        
+        if (profileData.bolum && !response.data.bolum) {
+          console.warn('[authService] Uyarı: Sunucudan gelen yanıtta bolum alanı eksik!');
+        }
+        
+        if (profileData.skills && !response.data.skills) {
+          console.warn('[authService] Uyarı: Sunucudan gelen yanıtta skills alanı eksik!');
+        }
+        
+        if (profileData.socialMedia && !response.data.socialMedia) {
+          console.warn('[authService] Uyarı: Sunucudan gelen yanıtta socialMedia alanı eksik!');
+        }
+        
+        // Doğrudan sunucudan gelen tüm güncellenmiş değerleri kullan
+        const updatedUser: User & { token: string } = {
+          ...existingUser,
+          ...response.data,
+          // Anahtar işlemleri için token bilgisini koru
+          token: existingUser.token
+        };
+        
+        console.log('[authService] AsyncStorage için güncellenmiş kullanıcı verisi:', JSON.stringify(updatedUser, null, 2));
+        
+        // Kritik alanların kontrolü
+        console.log('[authService] Kontrol - fakulte:', updatedUser.fakulte || 'boş');
+        console.log('[authService] Kontrol - bolum:', updatedUser.bolum || 'boş');
+        console.log('[authService] Kontrol - bio:', updatedUser.bio || 'boş');
+        console.log('[authService] Kontrol - skills:', updatedUser.skills || 'boş');
+        console.log('[authService] Kontrol - socialMedia:', JSON.stringify(updatedUser.socialMedia || {}, null, 2));
+        
+        // Güncellenmiş veriyi kaydet
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        console.log('[authService] AsyncStorage güncellendi');
+        
+        // Başarılı bildirim için güncellenmiş kullanıcı bilgisini döndür
+        return updatedUser;
+      } catch (asyncError) {
+        console.error('[authService] AsyncStorage güncelleme hatası:', asyncError);
+        // AsyncStorage hatası olsa bile API yanıtını döndür
+        return response.data as User;
+      }
+    } catch (error: any) {
+      console.error('[authService] updateProfile hatası:', error.message);
+      if (error.response) {
+        console.error('Hata detayları:', error.response.data);
+      }
       throw error;
     }
   }
