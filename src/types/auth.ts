@@ -5,7 +5,16 @@ export interface User {
   ad: string;
   soyad: string;
   email: string;
+  fakulte?: string;
+  bolum?: string;
   bio?: string;
+  skills?: string[];
+  socialMedia?: {
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+  };
   profileImage?: string;
   createdAt?: string;
 }

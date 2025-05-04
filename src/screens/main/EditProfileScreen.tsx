@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,24 +9,87 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import authService from '../../services/authService';
+import { User } from '../../types/auth';
 
 type EditProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'EditProfile'>;
 
 const EditProfileScreen = () => {
   const navigation = useNavigation<EditProfileScreenNavigationProp>();
-  const [fullName, setFullName] = useState('Oğulcan Demir');
-  const [email] = useState('240541016@firat.edu.tr');
-  const [bio, setBio] = useState('React Native Developer | FIRDevs Member');
-  const [skills, setSkills] = useState(['React Native', 'JavaScript', 'TypeScript']);
+  
+  // Profil verileri için state'ler
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [fakulte, setFakulte] = useState('');
+  const [bolum, setBolum] = useState('');
+  const [bio, setBio] = useState('');
+  const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
   const [github, setGithub] = useState('');
   const [linkedin, setLinkedin] = useState('');
   const [twitter, setTwitter] = useState('');
+  const [instagram, setInstagram] = useState('');
+
+  // Kullanıcı profilini yükle
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        setLoading(true);
+        
+        // Mevcut kullanıcıyı al
+        const userData = await authService.getCurrentUser();
+        
+        if (!userData) {
+          // Kullanıcı bulunamadıysa profil bilgilerini getir
+          const profile = await authService.getProfile();
+          if (profile) {
+            setUserData(profile);
+          }
+        } else {
+          setUserData(userData);
+        }
+      } catch (error) {
+        console.error('Profil yükleme hatası:', error);
+        Alert.alert('Hata', 'Profil bilgileri yüklenirken bir hata oluştu.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
+
+  // Kullanıcı verilerini form alanlarına yerleştir
+  const setUserData = (user: User) => {
+    // Ad ve soyad birleştirilerek gösterilir
+    setFullName(`${user.ad} ${user.soyad}`);
+    setEmail(user.email);
+    setFakulte(user.fakulte || '');
+    setBolum(user.bolum || '');
+    setBio(user.bio || '');
+    
+    // Yetkinlikler
+    if (user.skills && Array.isArray(user.skills)) {
+      setSkills(user.skills);
+    }
+    
+    // Sosyal medya
+    if (user.socialMedia) {
+      setGithub(user.socialMedia.github || '');
+      setLinkedin(user.socialMedia.linkedin || '');
+      setTwitter(user.socialMedia.twitter || '');
+      setInstagram(user.socialMedia.instagram || '');
+    }
+  };
 
   const handleAddSkill = () => {
     if (newSkill && !skills.includes(newSkill)) {
@@ -39,10 +102,60 @@ const EditProfileScreen = () => {
     setSkills(skills.filter(skill => skill !== skillToRemove));
   };
 
-  const handleSave = () => {
-    // TODO: Implement save logic
-    navigation.goBack();
+  const handleSave = async () => {
+    try {
+      if (!fullName.trim()) {
+        Alert.alert('Hata', 'Ad Soyad alanı boş olamaz');
+        return;
+      }
+      
+      setSaving(true);
+      
+      // Ad ve soyadı ayır (ilk boşluğa göre)
+      const nameParts = fullName.split(' ');
+      const ad = nameParts[0];
+      const soyad = nameParts.slice(1).join(' ');
+      
+      // Profil güncellemesi için verileri hazırla
+      const profileData = {
+        ad,
+        soyad,
+        fakulte,
+        bolum,
+        bio,
+        skills,
+        socialMedia: {
+          github,
+          linkedin,
+          twitter,
+          instagram
+        }
+      };
+      
+      // Profili güncelle
+      await authService.updateProfile(profileData);
+      
+      Alert.alert('Başarılı', 'Profil bilgileriniz güncellendi');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Profil güncelleme hatası:', error);
+      Alert.alert('Hata', 'Profil bilgileri güncellenirken bir hata oluştu.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  // Yükleme durumu
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1a73e8" />
+          <Text style={styles.loadingText}>Profil bilgileri yükleniyor...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -62,8 +175,13 @@ const EditProfileScreen = () => {
             <TouchableOpacity 
               style={styles.saveButton}
               onPress={handleSave}
+              disabled={saving}
             >
-              <Icon name="check" size={24} color="#fff" />
+              {saving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Icon name="check" size={24} color="#fff" />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -99,6 +217,28 @@ const EditProfileScreen = () => {
                 style={[styles.input, { color: '#666' }]}
                 value={email}
                 editable={false}
+                placeholderTextColor="#666"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Icon name="school" size={24} color="#1a73e8" />
+              <TextInput
+                style={styles.input}
+                placeholder="Fakülte"
+                value={fakulte}
+                onChangeText={setFakulte}
+                placeholderTextColor="#666"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Icon name="book-open-variant" size={24} color="#1a73e8" />
+              <TextInput
+                style={styles.input}
+                placeholder="Bölüm"
+                value={bolum}
+                onChangeText={setBolum}
                 placeholderTextColor="#666"
               />
             </View>
@@ -182,6 +322,17 @@ const EditProfileScreen = () => {
                 placeholderTextColor="#666"
               />
             </View>
+
+            <View style={styles.inputContainer}>
+              <Icon name="instagram" size={24} color="#1a73e8" />
+              <TextInput
+                style={styles.input}
+                placeholder="Instagram Kullanıcı Adı"
+                value={instagram}
+                onChangeText={setInstagram}
+                placeholderTextColor="#666"
+              />
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -259,11 +410,11 @@ const styles = StyleSheet.create({
   editAvatarButton: {
     position: 'absolute',
     bottom: 0,
-    right: '35%',
+    right: 0,
     backgroundColor: '#1a73e8',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
@@ -272,22 +423,22 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 15,
+    color: '#333',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    paddingHorizontal: 15,
     marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    paddingHorizontal: 10,
   },
   input: {
     flex: 1,
-    paddingVertical: 15,
-    marginLeft: 10,
-    fontSize: 16,
+    height: 50,
+    paddingHorizontal: 10,
     color: '#333',
   },
   skillsContainer: {
@@ -300,52 +451,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1a73e8',
     borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginRight: 8,
-    marginBottom: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    marginRight: 10,
+    marginBottom: 10,
   },
   skillText: {
     color: '#fff',
     marginRight: 5,
   },
   removeSkillButton: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   addSkillContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    paddingHorizontal: 10,
   },
   addSkillInput: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
+    height: 50,
+    paddingHorizontal: 10,
     color: '#333',
-    marginRight: 10,
   },
   addSkillButton: {
+    width: 40,
+    height: 40,
     backgroundColor: '#1a73e8',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#1a73e8',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
 });
 

@@ -19,13 +19,33 @@ exports.getProfile = async (req, res) => {
 // Kullanıcı profilini güncelle
 exports.updateProfile = async (req, res) => {
   try {
-    const { ad, soyad, bio } = req.body;
+    const { 
+      ad, 
+      soyad, 
+      bio, 
+      fakulte, 
+      bolum, 
+      skills,
+      socialMedia 
+    } = req.body;
     
     // Güncelleme verilerini hazırla
     const updateData = {};
     if (ad) updateData.ad = ad;
     if (soyad) updateData.soyad = soyad;
     if (bio) updateData.bio = bio;
+    if (fakulte) updateData.fakulte = fakulte;
+    if (bolum) updateData.bolum = bolum;
+    if (skills) updateData.skills = skills;
+    
+    // Sosyal medya verilerini hazırla
+    if (socialMedia) {
+      updateData.socialMedia = {};
+      if (socialMedia.github) updateData.socialMedia.github = socialMedia.github;
+      if (socialMedia.linkedin) updateData.socialMedia.linkedin = socialMedia.linkedin;
+      if (socialMedia.twitter) updateData.socialMedia.twitter = socialMedia.twitter;
+      if (socialMedia.instagram) updateData.socialMedia.instagram = socialMedia.instagram;
+    }
     
     // Profili güncelle
     const updatedUser = await User.findByIdAndUpdate(

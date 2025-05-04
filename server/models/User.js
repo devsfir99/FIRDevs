@@ -30,10 +30,42 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 6
   },
+  fakulte: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  bolum: {
+    type: String,
+    default: '',
+    trim: true
+  },
   bio: {
     type: String,
     default: '',
     maxlength: 200
+  },
+  skills: {
+    type: [String],
+    default: []
+  },
+  socialMedia: {
+    github: {
+      type: String,
+      default: ''
+    },
+    linkedin: {
+      type: String,
+      default: ''
+    },
+    twitter: {
+      type: String,
+      default: ''
+    },
+    instagram: {
+      type: String,
+      default: ''
+    }
   },
   profileImage: {
     type: String,
@@ -77,4 +109,4 @@ userSchema.methods.comparePassword = async function(givenPassword) {
 
 const User = mongoose.model('User', userSchema);
 
-module.exports = User; 
+module.exports = User;
