@@ -10,7 +10,7 @@ dotenv.config();
 
 // Express uygulaması oluştur
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
@@ -47,7 +47,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/firdevsmo
     });
 
     // Server başlat
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server ${PORT} portunda çalışıyor`);
     });
   })
