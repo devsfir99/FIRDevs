@@ -1,11 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { mockNotifications } from '../../services/mockData';
 import { Notification } from '../../types/post';
+import authService from '../../services/authService';
+import { User } from '../../types/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Logo importları
 import Logo from '../../assets/logo.png';
@@ -20,6 +23,74 @@ type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'H
 
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const [user, setUser] = useState<User | null>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+
+  // Profil fotoğrafı URL'sini oluştur
+  const getFullImageUrl = (imagePath: string | null | undefined): string | null => {
+    if (!imagePath) return null;
+
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+
+    const baseUrl = Platform.select({
+      ios: 'http://localhost:3001',
+      android: 'http://10.0.2.2:3001'
+    });
+
+    return baseUrl ? `${baseUrl}${imagePath}` : null;
+  };
+
+  // Kullanıcı verilerini yükle
+  const loadUserData = async () => {
+    try {
+      // AsyncStorage'dan kullanıcı verilerini al
+      const userDataStr = await AsyncStorage.getItem('user');
+      console.log('Raw user data from AsyncStorage:', userDataStr);
+
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        console.log('Parsed user data:', userData);
+        setUser(userData);
+
+        // Profil fotoğrafı URL'sini oluştur
+        if (userData.profileImage) {
+          const fullUrl = getFullImageUrl(userData.profileImage);
+          console.log('Profile image full URL:', fullUrl);
+          setProfileImageUrl(fullUrl);
+        }
+      } else {
+        // AsyncStorage'da veri yoksa getCurrentUser'dan al
+        const currentUser = await authService.getCurrentUser();
+        console.log('Current user from API:', currentUser);
+        
+        if (currentUser) {
+          setUser(currentUser);
+          
+          if (currentUser.profileImage) {
+            const fullUrl = getFullImageUrl(currentUser.profileImage);
+            console.log('Profile image full URL:', fullUrl);
+            setProfileImageUrl(fullUrl);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
+
+  // Component mount olduğunda ve profile sayfasından dönüldüğünde verileri yükle
+  useEffect(() => {
+    loadUserData();
+
+    // Navigation listener ekle
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadUserData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -36,30 +107,38 @@ const HomeScreen = () => {
               onPress={() => navigation.navigate({ name: 'Search', params: undefined })}
             >
               <Image 
-            source={SearchLogo} 
-            style={styles.iconStyle}
-            resizeMode="contain"
-          />
+                source={SearchLogo} 
+                style={styles.iconStyle}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
               onPress={() => navigation.navigate({ name: 'Notifications', params: undefined })}
             >
               <Image 
-            source={NotificationLogo} 
-            style={styles.iconStyle}
-            resizeMode="contain"
-          />
+                source={NotificationLogo} 
+                style={styles.iconStyle}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
               onPress={() => navigation.navigate({ name: 'Profile', params: { userId: 'current' } })}
             >
-              <Image 
-                source={ProfileLogo} 
-                style={styles.iconStyle}
-            resizeMode="contain"
-          />
+              {profileImageUrl ? (
+                <Image 
+                  source={{ uri: profileImageUrl }}
+                  style={[styles.iconStyle, { borderRadius: 16 }]}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Image 
+                  source={EditProfileLogo}
+                  style={styles.iconStyle}
+                  resizeMode="contain"
+                />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -222,11 +301,19 @@ const HomeScreen = () => {
           style={styles.bottomMenuItem}
           onPress={() => navigation.navigate('Profile', { userId: 'current' })}
         >
-          <Image 
-            source={ProfileLogo} 
-            style={styles.iconStyle}
-            resizeMode="contain"
-          />
+          {profileImageUrl ? (
+            <Image 
+              source={{ uri: profileImageUrl }}
+              style={[styles.iconStyle, { borderRadius: 14 }]}
+              resizeMode="cover"
+            />
+          ) : (
+            <Image 
+              source={ProfileLogo}
+              style={styles.iconStyle}
+              resizeMode="contain"
+            />
+          )}
           <Text style={[styles.bottomMenuText, styles.activeBottomMenuText]}>Profil</Text>
         </TouchableOpacity>
       </View>
