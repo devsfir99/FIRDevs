@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image, FlatList, ActivityIndicator, Alert, Animated, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image, FlatList, ActivityIndicator, Alert, Animated, Linking, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -61,6 +61,12 @@ const ProfileScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Base URL'i platform'a göre ayarla
+  const baseUrl = Platform.select({
+    ios: 'http://localhost:3001',
+    android: 'http://10.0.2.2:3001'
+  });
+  
   // Animasyon değerleri
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(50))[0];
@@ -78,6 +84,11 @@ const ProfileScreen = () => {
       if (token) {
         const profile = await authService.getProfile();
         if (profile) {
+          // Profil fotoğrafı varsa tam URL oluştur
+          if (profile.profileImage && !profile.profileImage.startsWith('http')) {
+            profile.profileImage = `${baseUrl}${profile.profileImage}`;
+          }
+          
           setUserProfile(profile);
           
           // Animasyonları başlat
@@ -101,6 +112,11 @@ const ProfileScreen = () => {
       // Token yoksa veya API isteği başarısız olursa AsyncStorage'dan al
       const userData = await authService.getCurrentUser();
       if (userData) {
+        // Profil fotoğrafı varsa tam URL oluştur
+        if (userData.profileImage && !userData.profileImage.startsWith('http')) {
+          userData.profileImage = `${baseUrl}${userData.profileImage}`;
+        }
+        
         setUserProfile(userData);
         
         // Animasyonları başlat
@@ -136,109 +152,8 @@ const ProfileScreen = () => {
   useFocusEffect(
     useCallback(() => {
       console.log('[ProfileScreen] Ekran odaklandı, profil verileri yenileniyor...');
-      
-      // Animasyon değerlerini sıfırla
-      fadeAnim.setValue(0);
-      slideAnim.setValue(50);
-      
-      let isMounted = true;
-      
-      const refreshProfile = async () => {
-        try {
-          if (!isMounted) return;
-          
-          setLoading(true);
-          
-          // Token kontrolü
-          const token = await AsyncStorage.getItem('token');
-          
-          if (!token) {
-            if (isMounted) {
-              setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
-              setLoading(false);
-            }
-            return;
-          }
-          
-          console.log('[ProfileScreen] Güncel profil bilgileri alınıyor...');
-          
-          // Öncelikle AsyncStorage'dan son kullanıcı verilerini al
-          const userDataJson = await AsyncStorage.getItem('user');
-          
-          if (userDataJson) {
-            const userData = JSON.parse(userDataJson);
-            console.log('[ProfileScreen] AsyncStorage\'dan profil verileri yüklendi:', JSON.stringify(userData, null, 2));
-            
-            if (isMounted) {
-              setUserProfile(userData);
-              setLoading(false);
-              setError(null);
-              
-              // Animasyonları başlat
-              Animated.parallel([
-                Animated.timing(fadeAnim, {
-                  toValue: 1,
-                  duration: 800,
-                  useNativeDriver: true,
-                }),
-                Animated.timing(slideAnim, {
-                  toValue: 0,
-                  duration: 800,
-                  useNativeDriver: true,
-                }),
-              ]).start();
-            }
-          } else {
-            // AsyncStorage'da kullanıcı yoksa API'den getir
-            try {
-              // API'den güncel profil bilgilerini getir
-              const profile = await authService.getProfile();
-              
-              if (isMounted) {
-                setUserProfile(profile);
-                setLoading(false);
-                setError(null);
-                
-                // Animasyonları başlat  
-                Animated.parallel([
-                  Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 800,
-                    useNativeDriver: true,
-                  }),
-                  Animated.timing(slideAnim, {
-                    toValue: 0,
-                    duration: 800,
-                    useNativeDriver: true,
-                  }),
-                ]).start();
-              }
-            } catch (apiErr) {
-              console.error('[ProfileScreen] API\'den profil getirme hatası:', apiErr);
-              if (isMounted) {
-                setError('Profil bilgileri yüklenirken bir hata oluştu.');
-                setLoading(false);
-              }
-            }
-          }
-        } catch (err) {
-          console.error('[ProfileScreen] Profil yenilenirken hata:', err);
-          
-          if (isMounted) {
-            setError('Profil bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
-            setLoading(false);
-          }
-        }
-      };
-      
-      // Ekran odaklandığında her zaman yeni verileri yükle
-      refreshProfile();
-      
-      // Cleanup fonksiyonu
-      return () => {
-        isMounted = false;
-      };
-    }, []) // Dependency array'i boş bırakıyoruz çünkü ekran her odaklandığında çalışmasını istiyoruz
+      loadUserProfile();
+    }, [])
   );
 
   // Sosyal medya bağlantılarını aç

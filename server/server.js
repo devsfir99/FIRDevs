@@ -10,11 +10,29 @@ dotenv.config();
 
 // Express uygulaması oluştur
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Uploads klasörünü oluştur
+const uploadsDir = path.join(__dirname, 'uploads');
+const avatarsDir = path.join(uploadsDir, 'avatars');
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Uploads klasörü oluşturuldu:', uploadsDir);
+}
+
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true });
+  console.log('Avatars klasörü oluşturuldu:', avatarsDir);
+}
+
+// Statik dosya servisi için uploads klasörünü ayarla
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+console.log('Statik dosya dizini:', path.join(__dirname, 'uploads'));
 
 // Routes klasörünün var olduğunu kontrol et
 const routesDir = path.join(__dirname, 'routes');

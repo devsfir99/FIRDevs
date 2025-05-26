@@ -40,10 +40,12 @@ export const userService = {
       api.get('/user/profile'),
     updateProfile: (userData: any) => 
       api.put('/user/profile', userData),
-    uploadAvatar: (file: File) => {
-      const formData = new FormData();
-      formData.append('avatar', file);
-      return api.post('/user/avatar', formData);
+    uploadAvatar: (formData: FormData) => {
+      return api.post('/user/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
     },
   };
   

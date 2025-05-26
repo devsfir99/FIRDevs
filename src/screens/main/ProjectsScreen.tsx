@@ -174,7 +174,7 @@ const ProjectsScreen = () => {
           onPress={() => navigation.navigate('Profile', { userId: 'current' })}
         >
           <Image 
-            source={ProfileLogo} 
+            source={SocialLogo} 
             style={styles.iconStyle}
             resizeMode="contain"
           />

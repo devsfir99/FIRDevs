@@ -69,7 +69,7 @@ const userSchema = new mongoose.Schema({
   },
   profileImage: {
     type: String,
-    default: ''
+    default: null
   },
   createdAt: {
     type: Date,
@@ -79,6 +79,8 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  timestamps: true
 });
 
 // Şifreyi hashleme

@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -18,6 +19,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import authService from '../../services/authService';
 import { User } from '../../types/auth';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { userService } from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type EditProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'EditProfile'>;
 
@@ -38,6 +42,7 @@ const EditProfileScreen = () => {
   const [linkedin, setLinkedin] = useState('');
   const [twitter, setTwitter] = useState('');
   const [instagram, setInstagram] = useState('');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   // Kullanıcı profilini yükle
   useEffect(() => {
@@ -76,6 +81,22 @@ const EditProfileScreen = () => {
     setFakulte(user.fakulte || '');
     setBolum(user.bolum || '');
     setBio(user.bio || '');
+    
+    // Profil fotoğrafı URL'sini ayarla
+    if (user.profileImage) {
+      // Eğer tam URL değilse, platform'a göre base URL ekle
+      if (!user.profileImage.startsWith('http')) {
+        const baseUrl = Platform.select({
+          ios: 'http://localhost:3001',
+          android: 'http://10.0.2.2:3001'
+        });
+        setProfileImage(`${baseUrl}${user.profileImage}`);
+      } else {
+        setProfileImage(user.profileImage);
+      }
+    } else {
+      setProfileImage(null);
+    }
     
     // Yetkinlikler
     if (user.skills && Array.isArray(user.skills)) {
@@ -223,6 +244,162 @@ const EditProfileScreen = () => {
     }
   };
 
+  // Profil fotoğrafı seçme işlemi
+  const handleSelectProfileImage = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+        maxWidth: 800,
+        maxHeight: 800,
+        selectionLimit: 1,
+      });
+
+      if (result.didCancel) {
+        return;
+      }
+
+      if (result.errorCode) {
+        console.error('ImagePicker Error:', result.errorMessage);
+        Alert.alert('Hata', 'Fotoğraf seçilirken bir hata oluştu: ' + (result.errorMessage || 'Bilinmeyen hata'));
+        return;
+      }
+
+      if (!result.assets || !result.assets[0]?.uri) {
+        Alert.alert('Hata', 'Fotoğraf seçilemedi. Lütfen tekrar deneyin.');
+        return;
+      }
+
+      const selectedImage = result.assets[0];
+      
+      // Dosya boyutunu kontrol et (max 5MB)
+      const fileSize = selectedImage.fileSize || 0;
+      if (fileSize > 5 * 1024 * 1024) {
+        Alert.alert('Hata', 'Fotoğraf boyutu çok büyük. Lütfen 5MB\'dan küçük bir fotoğraf seçin.');
+        return;
+      }
+
+      // Profil fotoğrafını yükle
+      const formData = new FormData();
+      formData.append('avatar', {
+        uri: selectedImage.uri,
+        type: selectedImage.type || 'image/jpeg',
+        name: selectedImage.fileName || 'profile.jpg',
+      } as any);
+
+      try {
+        // Yükleme başlamadan önce geçici olarak seçilen fotoğrafı göster
+        const imageUri = selectedImage.uri;
+        if (typeof imageUri === 'string') {
+          setProfileImage(imageUri);
+        } else {
+          setProfileImage(null);
+        }
+        
+        const response = await userService.uploadAvatar(formData);
+        
+        if (response.data?.profileImage) {
+          // Sunucudan gelen tam URL'i kullan
+          const baseUrl = Platform.select({
+            ios: 'http://localhost:3001',
+            android: 'http://10.0.2.2:3001'
+          });
+          
+          const profileImagePath = response.data.profileImage;
+          const fullImageUrl = typeof baseUrl === 'string' && typeof profileImagePath === 'string' 
+            ? `${baseUrl}${profileImagePath}`
+            : null;
+            
+          console.log('Yüklenen fotoğraf URL:', fullImageUrl);
+          
+          // State'i güncelle
+          setProfileImage(fullImageUrl);
+          
+          // AsyncStorage'ı güncelle
+          try {
+            const currentUser = await AsyncStorage.getItem('user');
+            if (currentUser) {
+              const userData = JSON.parse(currentUser);
+              userData.profileImage = typeof profileImagePath === 'string' ? profileImagePath : null;
+              await AsyncStorage.setItem('user', JSON.stringify(userData));
+            }
+          } catch (storageError) {
+            console.error('AsyncStorage güncelleme hatası:', storageError);
+          }
+
+          Alert.alert('Başarılı', 'Profil fotoğrafı güncellendi.');
+        } else {
+          throw new Error('Sunucudan geçerli bir yanıt alınamadı.');
+        }
+      } catch (error: any) {
+        console.error('Profil fotoğrafı yükleme hatası:', error);
+        
+        let errorMessage = 'Profil fotoğrafı yüklenirken bir hata oluştu.';
+        
+        if (error.response) {
+          console.error('Sunucu yanıtı:', error.response.data);
+          errorMessage = error.response.data?.message || 
+                        `Sunucu hatası: ${error.response.status}`;
+        } else if (error.request) {
+          console.error('Sunucuya ulaşılamadı');
+          errorMessage = 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.';
+        } else {
+          console.error('İstek hatası:', error.message);
+          errorMessage = `Beklenmeyen bir hata oluştu: ${error.message}`;
+        }
+
+        Alert.alert('Hata', errorMessage);
+        
+        // Hata durumunda önceki profil fotoğrafını geri yükle
+        const currentUser = await AsyncStorage.getItem('user');
+        if (currentUser) {
+          const userData = JSON.parse(currentUser);
+          if (userData.profileImage && typeof userData.profileImage === 'string') {
+            const baseUrl = Platform.select({
+              ios: 'http://localhost:3001',
+              android: 'http://10.0.2.2:3001'
+            });
+            
+            if (typeof baseUrl === 'string') {
+              setProfileImage(`${baseUrl}${userData.profileImage}`);
+            } else {
+              setProfileImage(null);
+            }
+          } else {
+            setProfileImage(null);
+          }
+        } else {
+          setProfileImage(null);
+        }
+      }
+    } catch (error) {
+      console.error('Resim seçme hatası:', error);
+      Alert.alert('Hata', 'Resim seçme işlemi başarısız oldu. Lütfen tekrar deneyin.');
+      
+      // Hata durumunda önceki profil fotoğrafını geri yükle
+      const currentUser = await AsyncStorage.getItem('user');
+      if (currentUser) {
+        const userData = JSON.parse(currentUser);
+        if (userData.profileImage && typeof userData.profileImage === 'string') {
+          const baseUrl = Platform.select({
+            ios: 'http://localhost:3001',
+            android: 'http://10.0.2.2:3001'
+          });
+          
+          if (typeof baseUrl === 'string') {
+            setProfileImage(`${baseUrl}${userData.profileImage}`);
+          } else {
+            setProfileImage(null);
+          }
+        } else {
+          setProfileImage(null);
+        }
+      } else {
+        setProfileImage(null);
+      }
+    }
+  };
+
   // Yükleme durumu
   if (loading) {
     return (
@@ -267,11 +444,29 @@ const EditProfileScreen = () => {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
             <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <Icon name="account" size={40} color="#fff" />
-              </View>
-              <TouchableOpacity style={styles.editAvatarButton}>
-                <Icon name="camera" size={20} color="#fff" />
+              <TouchableOpacity 
+                style={styles.profileImageContainer}
+                onPress={handleSelectProfileImage}
+              >
+                {profileImage ? (
+                  <Image 
+                    source={{ uri: profileImage }} 
+                    style={styles.profileImage}
+                    resizeMode="cover"
+                    onError={(error) => {
+                      console.error('Profil fotoğrafı yükleme hatası:', error);
+                      // Hata durumunda placeholder göster
+                      setProfileImage(null);
+                    }}
+                  />
+                ) : (
+                  <View style={styles.profileImagePlaceholder}>
+                    <Icon name="camera" size={40} color="#666" />
+                    <Text style={styles.profileImageText}>
+                      {profileImage === null ? 'Fotoğraf Ekle' : 'Fotoğraf Yüklenemedi'}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -488,26 +683,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#1a73e8',
-    justifyContent: 'center',
+  profileImageContainer: {
     alignItems: 'center',
+    marginVertical: 20,
   },
-  editAvatarButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#1a73e8',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#1a73e8',
+  },
+  profileImagePlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#ddd',
+    borderStyle: 'dashed',
+  },
+  profileImageText: {
+    marginTop: 8,
+    color: '#666',
+    fontSize: 14,
   },
   sectionTitle: {
     fontSize: 18,
