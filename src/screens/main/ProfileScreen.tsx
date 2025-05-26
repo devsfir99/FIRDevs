@@ -15,6 +15,12 @@ import NotificationLogo from '../../assets/notification.png';
 import ProfileLogo from '../../assets/social.png';
 import UserAvatarLogo from '../../assets/user-avatar.png';
 import LogoutLogo from '../../assets/logout.png'
+import EditProfileLogo from '../../assets/editProfileLogo.png'
+import InstagramLogo from '../../assets/instagramLogo.png';
+import DownLogo from '../../assets/downLogo.png';
+import UpLogo from '../../assets/upLogo.png';
+import AbilitiesLogo from '../../assets/abilitiesLogo.png';
+
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -355,7 +361,11 @@ const ProfileScreen = () => {
   if (error) {
     return (
       <SafeAreaView style={styles.errorContainer}>
-        <Icon name="alert-circle-outline" size={64} color="#ff6b6b" />
+        <Image 
+          source={Logo} 
+          style={styles.iconStyle}
+          resizeMode="contain"
+        />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity 
           style={styles.retryButton} 
@@ -375,7 +385,11 @@ const ProfileScreen = () => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-left" size={24} color="#fff" />
+            <Image 
+            source={Logo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profil</Text>
           <View style={styles.headerRight}>
@@ -383,13 +397,21 @@ const ProfileScreen = () => {
               style={styles.headerButton}
               onPress={() => navigation.navigate('EditProfile')}
             >
-              <Icon name="pencil" size={24} color="#fff" />
+            <Image 
+            source={EditProfileLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerButton}
               onPress={handleLogout}
             >
-              <Icon name="logout" size={24} color="#fff" />
+            <Image 
+            source={LogoutLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
             </TouchableOpacity>
           </View>
         </View>
@@ -476,7 +498,11 @@ const ProfileScreen = () => {
                   style={styles.socialButton}
                   onPress={() => openSocialMedia(userProfile.socialMedia?.instagram, 'Instagram')}
                 >
-                  <Icon name="instagram" size={24} color="#E1306C" />
+                  <Image 
+                    source={InstagramLogo} 
+                    style={styles.iconStyle}
+                    resizeMode="contain"
+                  />
                 </TouchableOpacity>
               )}
             </View>
@@ -495,7 +521,11 @@ const ProfileScreen = () => {
             ]}
           >
             <View style={styles.sectionHeader}>
-              <Icon name="lightbulb-on" size={24} color="#1a73e8" />
+              <Image 
+                source={AbilitiesLogo} 
+                style={styles.iconStyle}
+                resizeMode="contain"
+              />
               <Text style={styles.sectionTitle}>Yetkinlikler</Text>
             </View>
             <View style={styles.skillsContainer}>
@@ -519,16 +549,20 @@ const ProfileScreen = () => {
           ]}
         >
           <View style={styles.sectionHeader}>
-            <Icon name="folder-multiple" size={24} color="#1a73e8" />
+            <Image 
+            source={ProjectsLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
             <Text style={styles.sectionTitle}>Projeler</Text>
             <TouchableOpacity
               style={styles.expandButton}
               onPress={() => setIsSharedPostsExpanded(!isSharedPostsExpanded)}
             >
-              <Icon
-                name={isSharedPostsExpanded ? "chevron-up" : "chevron-down"}
-                size={24}
-                color="#1a73e8"
+              <Image 
+                source={isSharedPostsExpanded ? UpLogo : DownLogo} 
+                style={styles.iconStyle}
+                resizeMode="contain"
               />
             </TouchableOpacity>
           </View>
@@ -581,7 +615,7 @@ const ProfileScreen = () => {
           onPress={() => navigation.navigate('Home')}
         >
           <Image 
-            source={ProjectsLogo} 
+            source={Logo} 
             style={styles.iconStyle}
             resizeMode="contain"
           />
@@ -592,7 +626,11 @@ const ProfileScreen = () => {
           style={styles.bottomMenuItem}
           onPress={() => navigation.navigate('Projects')}
         >
-          <Icon name="folder-multiple" size={24} color="#666" />
+          <Image 
+            source={ProjectsLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
           <Text style={styles.bottomMenuText}>Projeler</Text>
         </TouchableOpacity>
         
@@ -600,7 +638,11 @@ const ProfileScreen = () => {
           style={styles.bottomMenuItem}
           onPress={() => navigation.navigate('Social')}
         >
-          <Icon name="account-group" size={24} color="#666" />
+          <Image 
+            source={SocialLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
           <Text style={styles.bottomMenuText}>Sosyal</Text>
         </TouchableOpacity>
         
@@ -608,7 +650,11 @@ const ProfileScreen = () => {
           style={[styles.bottomMenuItem, styles.activeBottomMenuItem]}
           onPress={() => {}}
         >
-          <Icon name="account-circle" size={24} color="#1a73e8" />
+          <Image 
+            source={ProfileLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
           <Text style={[styles.bottomMenuText, styles.activeBottomMenuText]}>Profil</Text>
         </TouchableOpacity>
       </View>
@@ -1009,9 +1055,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   iconStyle: {
-    width: 24,
-    height: 24,
-    
+    width: 28,
+    height: 28,
   },
 });
 

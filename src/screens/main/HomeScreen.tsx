@@ -178,7 +178,58 @@ const HomeScreen = () => {
             </View>
           </View>
         </View>*/}
+        
       </ScrollView>
+      {/* Alt Menü */}
+      <View style={styles.bottomMenu}>
+        <TouchableOpacity
+          style={styles.bottomMenuItem}
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Image 
+            source={Logo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
+          <Text style={styles.bottomMenuText}>Ana Sayfa</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.bottomMenuItem}
+          onPress={() => navigation.navigate('Projects')}
+        >
+          <Image 
+            source={ProjectsLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
+          <Text style={styles.bottomMenuText}>Projeler</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.bottomMenuItem}
+          onPress={() => navigation.navigate('Social')}
+        >
+          <Image 
+            source={SocialLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
+          <Text style={styles.bottomMenuText}>Sosyal</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.bottomMenuItem}
+          onPress={() => navigation.navigate('Profile', { userId: 'current' })}
+        >
+          <Image 
+            source={ProfileLogo} 
+            style={styles.iconStyle}
+            resizeMode="contain"
+          />
+          <Text style={[styles.bottomMenuText, styles.activeBottomMenuText]}>Profil</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -379,6 +430,41 @@ const styles = StyleSheet.create({
   activityTime: {
     fontSize: 12,
     color: '#999',
+  },
+  bottomMenu: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -3,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 10,
+  },
+  bottomMenuItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 5,
+  },
+  bottomMenuText: {
+    fontSize: 12,
+    color: '#777',
+    marginTop: 3,
+  },
+  activeBottomMenuItem: {
+    borderTopWidth: 3,
+    borderTopColor: '#1a73e8',
+    backgroundColor: '#f8f9fa',
+  },
+  activeBottomMenuText: {
+    color: '#1a73e8',
+    fontWeight: 'bold',
   },
 });
 
