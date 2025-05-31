@@ -858,7 +858,7 @@ PODS:
   - React-Mapbuffer (0.73.4):
     - glog
     - React-debug
-  - react-native-image-picker (8.2.1):
+  - react-native-image-picker (8.2.0):
     - glog
     - RCT-Folly (= 2022.05.16.00)
     - React-Core
@@ -1236,7 +1236,7 @@ SPEC CHECKSUMS:
   React-jsinspector: 9ac353eccf6ab54d1e0a33862ba91221d1e88460
   React-logger: 0a57b68dd2aec7ff738195f081f0520724b35dab
   React-Mapbuffer: 63913773ed7f96b814a2521e13e6d010282096ad
-  react-native-image-picker: a9cf708d1252d06806566939beff5823b0c193f4
+  react-native-image-picker: 94c98528740bb243f1c9bbbe9704522066ca94e2
   react-native-safe-area-context: 0ee144a6170530ccc37a0fd9388e28d06f516a89
   React-nativeconfig: d7af5bae6da70fa15ce44f045621cf99ed24087c
   React-NativeModulesApple: d5a1abf3d7ef808cdf1d27e795c741f0c5e14ea0
